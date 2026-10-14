@@ -17,3 +17,10 @@ Preflight:
 - Poll deployment every five seconds until ready/failed; review QA/runtime errors and automatically repair if needed.
 
 Result: all preflight items passed. Local Vite browser workflow passed including offline reload. Generated assets and source uploaded without credentials or rosters. AppDeploy returned ready with empty frontend/network/backend error lists.
+
+## Version 0.2 update
+- Import XLSX/XLS/DOCX locally; retain paste option, preview sheets/name/guardian columns and reject malformed files.
+- Preserve score keys and old saved results; primary mastery buttons advance only after saving; backtracking replaces previous judgements.
+- Next student reuses selected cards with fresh answers, follows captured section order and stops at the end.
+- Verify real generated spreadsheet/Word fixtures, auto-advance, saved draft, reports, backup and offline Vite output before updating app-0gwwi6.
+- Update the current snapshot files only; retain the existing app ID and URL.

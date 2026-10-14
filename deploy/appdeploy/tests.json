@@ -3,38 +3,70 @@
     "name": "Manual letter assessment, correction, draft and student report",
     "sanity": true,
     "viewport": "desktop",
-    "covers": ["grade and student selection", "letter skills and curriculum references", "manual grading", "changing a previous judgement", "saved draft and resume", "durable result", "student report and PDF print action", "CSV export"],
+    "covers": [
+      "grade and student selection",
+      "letter skills and curriculum references",
+      "manual grading",
+      "changing a previous judgement",
+      "saved draft and resume",
+      "durable result",
+      "student report and PDF print action",
+      "CSV export",
+      "automatic grading advance",
+      "next student in section order",
+      "fresh next-student answers",
+      "end of roster stop"
+    ],
     "description": "Complete a six-card first-grade fatha test, change a judgement and verify the saved report after reload.",
     "steps": [
-      "Open الصف الأول, add a student named تجربة التشخيص in section أ, then start their assessment.",
-      "Use إلغاء الكل, select only يقرأ حروف الوحدة مع الفتحة in unit 1 and start the test. Confirm a source page reference and a legible Arabic letter.",
-      "Grade the first card صحيح مستقل and move to the second. Grade the second بمساعدة, then use حفظ واستكمال لاحقًا.",
-      "Reload, click استكمال, return to the first card using السابقة twice and change its judgement to غير صحيح. Advance to the third card.",
-      "Grade cards three through six صحيح مستقل. Use مراجعة وحفظ and save the result with note تدريب إضافي على الفتحة.",
-      "Confirm the student report shows ٦٧٪ and متوسط and the note, with actions طباعة أو حفظ PDF and تصدير الجدول CSV. Export the CSV.",
-      "Close the report, reload and reopen the saved result from النتائج. Confirm the same percentage and note; the student report omits duration and item-count summaries."
+      "Open الصف الأول and add تجربة التشخيص followed by طالب تالٍ, both in section أ. Start تجربة التشخيص.",
+      "Clear skills with إلغاء الكل and select only the unit 1 fatha letter skill, then begin the six-card assessment.",
+      "Click متقن on the first card and confirm the second appears automatically. Click بمساعدة on the second and confirm the third appears automatically. Save for later and reload.",
+      "Resume and return twice using السابقة to the first card. Change it with غير متقن; this automatically advances to card two. Its prior judgement remains. Use التالية once to return to card three.",
+      "Grade the remaining four cards متقن, without clicking التالي between judgements. The last judgement automatically opens review. Add note تدريب إضافي and save.",
+      "The report shows ٦٧٪ and متوسط. Export its CSV and verify the print/PDF action remains available.",
+      "Click الطالب التالي: طالب تالٍ. Its name and same first letter appear with no old judgements. Grade all six cards متقن and save; its report shows ١٠٠٪ and آخر طالب في هذا الكشف.",
+      "Reload and reopen تجربة التشخيص from النتائج. Its saved report still shows ٦٧٪ with the note, independent of the next student's result."
     ],
     "expected": "One durable result shows ٦٧٪ and متوسط, previous judgement was replaced, the report and CSV are available and the saved draft is gone."
   },
   {
     "name": "Mobile roster validation, import, editing and archive recovery",
     "viewport": "mobile",
-    "covers": ["mobile navigation and forms", "empty-name guardrail", "roster paste and duplicate prevention", "guardian data", "student editing", "archive and unarchive", "search and section filtering"],
+    "covers": [
+      "mobile navigation and forms",
+      "empty-name guardrail",
+      "roster paste and duplicate prevention",
+      "guardian data",
+      "student editing",
+      "archive and unarchive",
+      "search and section filtering",
+      "Excel XLSX/XLS import",
+      "Word DOCX import",
+      "sheet and column selection",
+      "invalid file rejection"
+    ],
     "description": "Manage a small roster on mobile and verify validation, duplicate prevention and recoverable archiving.",
     "steps": [
-      "Open الصف الثاني and إضافة طالب. Leave the name empty and try saving; the form must remain and no student is added. Close it.",
-      "Open لصق كشف أو استيراد CSV and paste a two-column CSV headed اسم الطالب,ولي الأمر with rows طالب كشف ألف,ولي ألف and طالب كشف باء,ولي باء. Add it to section ب.",
-      "Import the same two rows again and verify each name appears only once.",
-      "Use the edit control on طالب كشف ألف, rename them طالب كشف معدل and save. Search for معدل and filter section ب.",
-      "Edit طالب كشف معدل, archive them, open الطلاب المؤرشفون and restore them using إعادة للصف.",
-      "Reload and confirm both names and guardian information are retained, with no horizontal overflow."
+      "On mobile open الصف الثاني and the import dialog استيراد Excel أو Word / لصق كشف. The file picker explicitly accepts XLSX, XLS and DOCX and column/sheet controls appear after choosing a file.",
+      "Using a real locally generated Excel workbook with columns رقم,ولي الأمر,اسم الطالب and two student rows, select it in ملف الكشف. Confirm the preview finds the name and guardian columns; import the rows.",
+      "Import the same workbook again and verify no duplicate names are added. With a real DOCX containing a table of one distinct student and guardian, import it and confirm the student's name and guardian are shown.",
+      "Open النسخ واللصق بدلًا من الملف and paste one new student; add to section ب. Verify paste remains usable independently of file import.",
+      "Edit the pasted student's name, archive them, open الطلاب المؤرشفون and restore them. Reload and search for the updated name.",
+      "Try selecting a text-only file renamed broken.xlsx; a readable invalid-file error appears and no names are imported. An empty manual student name cannot be saved."
     ],
-    "expected": "Two distinct students persist on mobile, the renamed student and guardian are correct, the archived student can be restored and an empty name creates no record."
+    "expected": "Real Excel and Word files import correct names and guardians with no duplicates; paste, editing and archive recovery still work, malformed files and blank names create no records."
   },
   {
     "name": "Backup exports and repeated merge preserve student and draft",
     "viewport": "desktop",
-    "covers": ["backup export", "backup restore and merge", "duplicate merge prevention", "draft retention", "local-only records"],
+    "covers": [
+      "backup export",
+      "backup restore and merge",
+      "duplicate merge prevention",
+      "draft retention",
+      "local-only records"
+    ],
     "description": "Export a real backup from a saved draft and merge it twice without duplicating records.",
     "steps": [
       "Add a first-grade student named نسخة احتياطية in section ج. Start a unit 1 test of only the fatha skill, grade one card and save for later.",
@@ -47,12 +79,20 @@
   {
     "name": "Second-semester routes and editable assessment cards for grades two and three",
     "viewport": "mobile",
-    "covers": ["grade two and three routes", "semester two and unit selection", "cumulative skill scope", "domain filtering and skill selection", "preview sample editing", "active-card editing resets judgement", "font control"],
+    "covers": [
+      "grade two and three routes",
+      "semester two and unit selection",
+      "cumulative skill scope",
+      "domain filtering and skill selection",
+      "preview sample editing",
+      "active-card editing resets judgement",
+      "font control"
+    ],
     "description": "Exercise second-semester assessments and teacher-controlled sample editing on mobile.",
     "steps": [
       "Add a student named اختبار ثاني in grade 2 and one named اختبار ثالث in grade 3.",
       "For grade 2 choose الفصل الثاني and its first unit. Clear skill selection, select the unit reading-words skill, preview samples, edit one sample to كِتَابٌ and save the preview.",
-      "Start the test, grade its first card, use تعديل بطاقة الاختبار to change the text to قَلَمٌ and save. Verify the old judgement is cleared and a new judgement is required. Save for later.",
+      "Start the test, grade its first card and return with السابقة, then use تعديل هذه البطاقة in the teacher guide to change the text to قَلَمٌ and save. Verify the old judgement is cleared and a new judgement is required. Save for later.",
       "For grade 3 choose الفصل الثاني and unit 8. Toggle cumulative scope to see earlier units, filter a domain, then select a reading skill and start its assessment.",
       "Verify the header identifies grade 3 and semester 2, use font enlargement controls and save for later. Reload and verify both drafts remain."
     ],
@@ -61,7 +101,15 @@
   {
     "name": "School settings, class report and offline persistence",
     "viewport": "desktop",
-    "covers": ["school and teacher settings", "mastery thresholds validation", "class report and untested students", "same-window report refresh", "class CSV export", "service worker and offline reload", "persistent settings"],
+    "covers": [
+      "school and teacher settings",
+      "mastery thresholds validation",
+      "class report and untested students",
+      "same-window report refresh",
+      "class CSV export",
+      "service worker and offline reload",
+      "persistent settings"
+    ],
     "description": "Retain settings, show untested students accurately and reload the app without connectivity.",
     "steps": [
       "Add a grade 3 student named غير مختبر in section د. In الإعدادات enter مدرسة تجريبية and معلم تجريبي, set mastery 80 and medium 50 and save.",

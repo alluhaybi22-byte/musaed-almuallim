@@ -1,37 +1,97 @@
 import { mkdir, cp, rm, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 const prettier = process.env.APPDEPLOY_TOOL_MODULES
-  ? await import(resolve(process.env.APPDEPLOY_TOOL_MODULES, 'prettier/index.mjs'))
+  ? await import(
+      resolve(process.env.APPDEPLOY_TOOL_MODULES, 'prettier/index.mjs')
+    )
   : await import('prettier');
 const root = resolve(import.meta.dirname, '..');
 const stage = resolve(root, 'deploy/appdeploy/stage');
 await rm(stage, { recursive: true, force: true });
 await mkdir(resolve(stage, 'src'), { recursive: true });
 await mkdir(resolve(stage, 'tests'), { recursive: true });
-await cp(resolve(root, 'public'), resolve(stage, 'public'), { recursive: true });
+await cp(resolve(root, 'public'), resolve(stage, 'public'), {
+  recursive: true,
+});
 await rm(resolve(stage, 'public/index.html'));
 await rm(resolve(stage, 'public/styles.css'));
-const write = async (path, source, parser) => writeFile(resolve(stage, path), await prettier.format(source, { parser, singleQuote: true }));
-for (const name of ['domain.js', 'storage.js', 'questions.js', 'app.js']) {
+const write = async (path, source, parser) =>
+  writeFile(
+    resolve(stage, path),
+    await prettier.format(source, { parser, singleQuote: true }),
+  );
+for (const name of [
+  'domain.js',
+  'storage.js',
+  'questions.js',
+  'app.js',
+  'roster-file.js',
+]) {
   let source = await readFile(resolve(root, 'src', name), 'utf8');
-  if (name === 'app.js') source = source.replaceAll('/assets/', './assets/').replace("fetch('/curriculum.json')", "fetch('./curriculum.json')").replace("register('/sw.js')", "register('./sw.js')");
+  if (name === 'app.js')
+    source = source
+      .replace(/(?<!\.)\/assets\//g, './assets/')
+      .replace("fetch('/curriculum.json')", "fetch('./curriculum.json')")
+      .replace("register('/sw.js')", "register('./sw.js')");
   await write('src/' + name, source, 'babel');
 }
-await write('src/main.ts', "import './styles.css';\nimport './app.js';\n", 'typescript');
-await write('src/styles.css', await readFile(resolve(root, 'public/styles.css'), 'utf8'), 'css');
+await cp(resolve(root, 'src/vendor'), resolve(stage, 'src/vendor'), {
+  recursive: true,
+});
+await write(
+  'src/main.ts',
+  "import './styles.css';\nimport './app.js';\n",
+  'typescript',
+);
+await write(
+  'src/styles.css',
+  await readFile(resolve(root, 'public/styles.css'), 'utf8'),
+  'css',
+);
 let html = await readFile(resolve(root, 'public/index.html'), 'utf8');
-html = html.replaceAll('href="/', 'href="./').replace('./styles.css', './src/styles.css').replace('/src/app.js', './src/main.ts');
+html = html
+  .replaceAll('href="/', 'href="./')
+  .replace('./styles.css', './src/styles.css')
+  .replace('/src/app.js', './src/main.ts');
 await write('index.html', html, 'html');
-const manifest = JSON.parse(await readFile(resolve(root, 'public/manifest.webmanifest'), 'utf8'));
-manifest.start_url = './'; manifest.scope = './';
+const manifest = JSON.parse(
+  await readFile(resolve(root, 'public/manifest.webmanifest'), 'utf8'),
+);
+manifest.start_url = './';
+manifest.scope = './';
 for (const item of manifest.icons) item.src = item.src.replace(/^\//, './');
 await write('public/manifest.webmanifest', JSON.stringify(manifest), 'json');
-await write('public/curriculum.json', await readFile(resolve(root, 'public/curriculum.json'), 'utf8'), 'json');
-const tests = JSON.parse(await readFile(resolve(root, 'deploy/appdeploy/tests.json'), 'utf8'));
-if (tests.length !== 5 || tests.filter(t => t.sanity).length !== 1 || tests.some(t => !t.covers.length || !t.steps.length)) throw Error('Invalid QA tests');
+await write(
+  'public/curriculum.json',
+  await readFile(resolve(root, 'public/curriculum.json'), 'utf8'),
+  'json',
+);
+const tests = JSON.parse(
+  await readFile(resolve(root, 'deploy/appdeploy/tests.json'), 'utf8'),
+);
+if (
+  tests.length !== 5 ||
+  tests.filter((t) => t.sanity).length !== 1 ||
+  tests.some((t) => !t.covers.length || !t.steps.length)
+)
+  throw Error('Invalid QA tests');
 await write('tests/tests.json', JSON.stringify(tests), 'json');
-await write('package.json', JSON.stringify({ name: 'al-musaed-appdeploy', private: true, version: '0.1.0', type: 'module', scripts: { dev: 'vite', build: 'vite build', preview: 'vite preview' }, devDependencies: { vite: '^6.0.0' } }), 'json');
-await write('vite.config.ts', `
+await write(
+  'package.json',
+  JSON.stringify({
+    name: 'al-musaed-appdeploy',
+    private: true,
+    version: JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
+      .version,
+    type: 'module',
+    scripts: { dev: 'vite', build: 'vite build', preview: 'vite preview' },
+    devDependencies: { vite: '^6.0.0' },
+  }),
+  'json',
+);
+await write(
+  'vite.config.ts',
+  `
 import { defineConfig } from 'vite';
 import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
@@ -51,5 +111,7 @@ export default defineConfig({
    "self.addEventListener('fetch',event=>{const u=new URL(event.request.url);if(event.request.method!=='GET'||u.origin!==self.location.origin)return;event.respondWith(caches.open(CACHE).then(async cache=>{const hit=await cache.match(event.request,{ignoreSearch:true,ignoreVary:true});if(hit)return hit;try{return await fetch(event.request);}catch(error){if(event.request.mode==='navigate')return cache.match(BASE);throw error;}}));});\\n";
   await writeFile(resolve(out,'sw.js'),sw);
  }}]
-});`, 'typescript');
+});`,
+  'typescript',
+);
 console.log('AppDeploy staging ready with five QA workflows; no student data.');

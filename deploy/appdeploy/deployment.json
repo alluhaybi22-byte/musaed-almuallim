@@ -2,13 +2,15 @@
   "platform": "AppDeploy",
   "app_id": "app-0gwwi6",
   "url": "https://app-0gwwi6.v2.appdeploy.ai/",
-  "snapshot_version": "1791955684870",
+  "snapshot_version": "1791972911212",
   "published_on": "2026-10-14",
   "status": "ready",
   "student_storage": "local IndexedDB only; empty initial roster",
   "checks": {
     "local_vite_e2e": "passed",
-    "platform_runtime_qa": "no frontend, network or backend errors reported"
+    "platform_runtime_qa": "no frontend, network or backend errors reported",
+    "roster_import_and_batch_e2e": "passed for XLSX/XLS/DOCX, automatic scoring and section-order next student"
   },
-  "scope": "independent new trial app; no previous apps modified"
+  "scope": "independent new trial app; no previous apps modified",
+  "app_version": "0.2.0"
 }
