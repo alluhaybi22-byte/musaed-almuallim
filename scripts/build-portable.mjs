@@ -30,6 +30,7 @@ const modules = [];
 for (const name of [
   'domain.js',
   'storage.js',
+  'task-cards.js',
   'questions.js',
   'roster-file.js',
 ])

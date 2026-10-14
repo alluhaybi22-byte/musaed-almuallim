@@ -30,3 +30,7 @@ Result: all preflight items passed. Local Vite browser workflow passed including
 - Verify the attached workbook locally imports 28 students, excluding staff and blank template rows. Never publish its contents.
 - Test synthetic Excel and Word footer rows through the browser import workflow.
 - Read current source and QA tests, send only the changed importer and reconciled tests, retain app-0gwwi6, and poll through final QA status.
+
+## Astra review update 0.3.0
+Implementation: retain app-0gwwi6 and its local data schema; single-task compound cards; balanced solar/lunar subskills; editable listening/dictation criteria; student-only view; full roster confirmation; result search/date/semester/section filters; homogeneous class scope with item counts and dates; matched progress and detailed failed items; ready presets and backup reminder.
+Preflight: 24 unit tests pass; full desktop/mobile flow, original snapshot restore, Vite production review flow including compound cards/dates/CSV, portable build and offline all pass. Five reconciled QA workflows, exactly one sanity; no real student data or secrets. Send changed source files plus task-cards.js only; retain current dependencies and existing assets; parse manifest/test JSON and check the current published version before upload. Poll QA until terminal and inspect errors.

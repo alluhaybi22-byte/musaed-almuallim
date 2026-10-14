@@ -15,18 +15,23 @@
       "automatic grading advance",
       "next student in section order",
       "fresh next-student answers",
-      "end of roster stop"
+      "end of roster stop",
+      "failed item details and notes",
+      "matched-material progress comparison",
+      "student-only view"
     ],
     "description": "Complete a six-card first-grade fatha test, change a judgement and verify the saved report after reload.",
     "steps": [
       "Open الصف الأول and add تجربة التشخيص followed by طالب تالٍ, both in section أ. Start تجربة التشخيص.",
       "Clear skills with إلغاء الكل and select only the unit 1 fatha letter skill, then begin the six-card assessment.",
-      "Click متقن on the first card and confirm the second appears automatically. Click بمساعدة on the second and confirm the third appears automatically. Save for later and reload.",
+      "Before grading, open عرض الطالب. Only the prompt and العودة للمعلم appear; no answers, teacher guide or grading controls are exposed. Return to the teacher view.",
+      "Click متقن on the first card and confirm the second appears automatically. Open خيارات التقييم والملاحظات and click بمساعدة on the second and confirm the third appears automatically. Save for later and reload.",
       "Resume and return twice using السابقة to the first card. Change it with غير متقن; this automatically advances to card two. Its prior judgement remains. Use التالية once to return to card three.",
       "Grade the remaining four cards متقن, without clicking التالي between judgements. The last judgement automatically opens review. Add note تدريب إضافي and save.",
       "The report shows ٦٧٪ and متوسط. Export its CSV and verify the print/PDF action remains available.",
       "Click الطالب التالي: طالب تالٍ. Its name and same first letter appear with no old judgements. Grade all six cards متقن and save; its report shows ١٠٠٪ and آخر طالب في هذا الكشف.",
-      "Reload and reopen تجربة التشخيص from النتائج. Its saved report still shows ٦٧٪ with the note, independent of the next student's result."
+      "Reload and reopen تجربة التشخيص from النتائج. Its saved report still shows ٦٧٪ with the note, independent of the next student's result.",
+      "In the saved report verify بنود تحتاج تدريبًا includes the incorrect and assisted letter cards. Repeat the exact same six-card test for the first student with all correct answers. Its report shows comparison to the earlier 67% result; changing a sample must instead remove the matched comparison."
     ],
     "expected": "One durable result shows ٦٧٪ and متوسط, previous judgement was replaced, the report and CSV are available and the saved draft is gone."
   },
@@ -45,14 +50,18 @@
       "Word DOCX import",
       "sheet and column selection",
       "invalid file rejection",
-      "teacher and principal footer exclusion"
+      "teacher and principal footer exclusion",
+      "full roster review before confirmation",
+      "name and guardian correction",
+      "excluding reviewed rows"
     ],
     "description": "Manage a small roster on mobile and verify validation, duplicate prevention and recoverable archiving.",
     "steps": [
       "On mobile open الصف الثاني and the import dialog استيراد Excel أو Word / لصق كشف. The file picker explicitly accepts XLSX, XLS and DOCX and column/sheet controls appear after choosing a file.",
-      "Using a real locally generated Excel workbook with columns رقم,ولي الأمر,اسم الطالب and two student rows, followed by a footer with معلم المادة : معلم تجريبي in the name column and مدير المدرسة : مدير تجريبي elsewhere, select it in ملف الكشف. Confirm the preview counts only two students and detects the name and guardian columns; import the rows. Neither staff footer appears as a student after reload.",
-      "Import the same workbook again and verify no duplicate names are added. With a real DOCX containing a table of one distinct student and guardian, import it and confirm the student's name and guardian are shown.",
-      "Open النسخ واللصق بدلًا من الملف and paste one new student; add to section ب. Verify paste remains usable independently of file import.",
+      "Using a real locally generated Excel workbook with columns رقم,ولي الأمر,اسم الطالب and two student rows, followed by a footer with معلم المادة : معلم تجريبي in the name column and مدير المدرسة : مدير تجريبي elsewhere, select it in ملف الكشف. Confirm the preview counts only two students and detects the name and guardian columns; click إضافة الكشف إلى الصف to open مراجعة أسماء الكشف, then اعتماد الكشف to import. Neither staff footer appears as a student after reload.",
+      "Before approving a fresh two-name workbook, edit the first name and guardian and uncheck the second. Approve; only the edited first name appears and remains after reload. Reimport still prevents duplicates of the same name in the same section.",
+      "Import the same workbook again and verify no duplicate names are added. With a real DOCX containing a table of one distinct student and guardian, review the names, approve with اعتماد الكشف and confirm the student's name and guardian are shown.",
+      "Open النسخ واللصق بدلًا من الملف and paste one new student; review the pasted names and approve to section ب. Verify paste remains usable independently of file import.",
       "Edit the pasted student's name, archive them, open الطلاب المؤرشفون and restore them. Reload and search for the updated name.",
       "Try selecting a text-only file renamed broken.xlsx; a readable invalid-file error appears and no names are imported. An empty manual student name cannot be saved."
     ],
@@ -87,7 +96,15 @@
       "domain filtering and skill selection",
       "preview sample editing",
       "active-card editing resets judgement",
-      "font control"
+      "font control",
+      "one-task classification",
+      "balanced solar and lunar samples",
+      "facet breakdown",
+      "editable teacher stimulus and expected answer",
+      "ready skill selections",
+      "compound outcome split into reading and dictation",
+      "hidden dictation stimulus",
+      "independent branch mastery percentages"
     ],
     "description": "Exercise second-semester assessments and teacher-controlled sample editing on mobile.",
     "steps": [
@@ -95,7 +112,10 @@
       "For grade 2 choose الفصل الثاني and its first unit. Clear skill selection, select the unit reading-words skill, preview samples, edit one sample to كِتَابٌ and save the preview.",
       "Start the test, grade its first card and return with السابقة, then use تعديل هذه البطاقة in the teacher guide to change the text to قَلَمٌ and save. Verify the old judgement is cleared and a new judgement is required. Save for later.",
       "For grade 3 choose الفصل الثاني and unit 8. Toggle cumulative scope to see earlier units, filter a domain, then select a reading skill and start its assessment.",
-      "Verify the header identifies grade 3 and semester 2, use font enlargement controls and save for later. Reload and verify both drafts remain."
+      "Verify the header identifies grade 3 and semester 2, use font enlargement controls and save for later. Reload and verify both drafts remain.",
+      "Choose الفهم والاستماع in grade 2 setup, review the samples and edit the first listening teacher text and its expected answer together. Start and open خيارات التقييم والملاحظات then دليل المعلم والإجابة المتوقعة. The edited text is visible to the teacher; عرض الطالب hides it. Editing the active card offers the teacher text field and saving clears an earlier judgement.",
+      "For the solar/lunar skill verify ten classification cards, five lunar then five solar. Grade the five lunar correct and three solar incorrect, save and check the report shows lunar 100%, solar 40%, with the three failed words listed. The task asks classification alone.",
+      "For grade 2, semester 1, unit 3, clear selection and choose يقرأ ويكتب التنوين alone. Its ten cards contain five read-only cards and five write-only cards. Mark reading cards correct and writing cards incorrect; عرض الطالب must never show the dictated word. Save and verify independent reading 100% and dictation 0%, with five failed writing cards and their criteria."
     ],
     "expected": "Both second-semester routes run on mobile; edited cards show the teacher text, active-card editing clears its judgement, and both drafts persist."
   },
@@ -109,7 +129,15 @@
       "same-window report refresh",
       "class CSV export",
       "service worker and offline reload",
-      "persistent settings"
+      "persistent settings",
+      "result search and semester date section filters",
+      "class report skill selection",
+      "same-material class report",
+      "last-test scope label",
+      "backup export date and reminder",
+      "class report date range",
+      "class report assessed item counts",
+      "local-day filtering"
     ],
     "description": "Retain settings, show untested students accurately and reload the app without connectivity.",
     "steps": [
@@ -117,7 +145,10 @@
       "Try an invalid threshold configuration with mastery below medium; verify a visible validation error, then restore 80 and 50 and save.",
       "Open النتائج for grade 3 and تقرير الصف. Verify the school and student, and that the untested student is labeled غير مختبر with no false weak score.",
       "Refresh the report using تحديث التقرير in its current dialog and export the class CSV. Close the dialog and reload once to activate the offline cache.",
-      "Disable network access in the test browser, reload the application, open the student list and settings, then re-enable the network."
+      "Disable network access in the test browser, reload the application, open the student list and settings, then re-enable the network.",
+      "In results filter by student name, semester, from/to date and section; mismatching filters hide results without deleting records. Open class report and select a skill or same test samples. An untested or unmatched student is labeled غير مختبر; CSV matches the selected scope. The student list describes the score as آخر اختبار and names the assessed skills.",
+      "With local records and no prior backup, home shows a reminder. Export a real backup; settings shows آخر تصدير with its date. Reload home and the reminder stays hidden for a week. The message asks the user to check that the download was saved.",
+      "The class report initially selects the latest same-material test when results exist. Verify البنود المقيمة, set من تاريخ to 2099-01-01 and confirm results are غير مختبر without false weak scores; clear the date to restore them. Export CSV and verify the selected scope and item counts are included."
     ],
     "expected": "Settings persist, invalid thresholds are rejected, the report labels untested students correctly, CSV exports and the cached app opens offline with the saved student."
   }

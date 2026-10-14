@@ -10,3 +10,35 @@ svg{width:24px;height:24px;flex:none}
 @media print{body{background:white!important;font-size:12pt}body>*{display:none!important}body>#dialog-root{display:block!important}#dialog-root .modal-backdrop{display:block!important;position:static;background:white;padding:0;backdrop-filter:none}#dialog-root .modal{max-height:none;overflow:visible;border-radius:0;box-shadow:none;padding:0;max-width:none}#dialog-root .modal-head,.report-actions,#dialog-root .modal-actions{display:none!important}.report-sheet{padding:0}.report-meta{grid-template-columns:1fr 1fr}.report-sheet table{font-size:10pt}.report-sheet th,.report-sheet td{padding:8px}.badge{background:transparent!important;color:black!important;padding:0}.report-foot{display:flex;justify-content:space-between}.report-title h2{font-size:17pt}}
 
 .roster-table{border-collapse:collapse;width:100%;font-size:14px}.roster-table td,.roster-table th{border:1px solid var(--line);padding:9px;text-align:right}.roster-table th{background:var(--blue-soft)}
+
+/* Teacher review and a separate student view. */
+.last-test { max-width: 340px; text-align: start; }
+.last-test small { display: block; margin-bottom: 6px; }
+.result-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 20px 0; }
+.report-scope { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 18px 0; }
+.roster-review-scroll { max-height: 55vh; overflow: auto; margin: 18px 0; }
+.roster-review-scroll input[type="checkbox"] { width: 24px; height: 24px; }
+.roster-review-scroll table { min-width: 560px; }
+.roster-review-scroll td { padding: 8px; }
+.roster-review-scroll input:not([type="checkbox"]) { min-width: 190px; }
+.assessment-options { margin: 18px 0; border: 1px solid var(--line, #dce5ef); border-radius: 16px; padding: 16px; }
+.assessment-options summary { cursor: pointer; font-weight: bold; color: #155da7; }
+.assessment-options[open] > .row { margin-top: 16px; }
+.student-display { min-height: 100vh; background: #f5f8fc; padding: 24px; display: grid; align-content: start; gap: 28px; }
+.student-display .prompt-card { width: min(100%, 1100px); margin: 0 auto; padding: 48px 24px; }
+.backup-reminder { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.report-sheet h3 { margin: 24px 0 12px; }
+.report-sheet table { margin-bottom: 18px; }
+.item-details td { overflow-wrap: anywhere; }
+@media (max-width: 650px) {
+  .report-scope { grid-template-columns: 1fr; }
+  .student-display { padding: 16px; }
+  .report-sheet { overflow-x: auto; }
+  .last-test { max-width: 220px; }
+}
+@media print {
+  .report-scope { display: none !important; }
+  .report-sheet { overflow: visible !important; }
+  .report-sheet tr { break-inside: avoid; }
+  .report-sheet h3 { break-after: avoid; }
+}

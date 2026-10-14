@@ -24,6 +24,7 @@ for (const name of [
   'domain.js',
   'storage.js',
   'questions.js',
+  'task-cards.js',
   'app.js',
   'roster-file.js',
 ]) {
@@ -96,11 +97,12 @@ import { defineConfig } from 'vite';
 import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
 import { createHash } from 'node:crypto';
+let outputDirectory;
 export default defineConfig({
  base: './',
  build: {target: 'es2022', outDir: process.env.APPDEPLOY_VITE_OUT_DIR || 'dist', sourcemap: process.env.APPDEPLOY_VITE_SOURCEMAP === 'hidden' ? 'hidden' : false, rollupOptions:{maxParallelFileOps:128}},
- plugins: [{name: 'al-musaed-offline', async closeBundle(){
-  const out = resolve(process.env.APPDEPLOY_VITE_OUT_DIR || 'dist');
+ plugins: [{name: 'al-musaed-offline', configResolved(config){outputDirectory=resolve(config.root,config.build.outDir);}, async closeBundle(){
+  const out = outputDirectory;
   async function walk(dir){const items=[]; for(const name of await readdir(dir)){const p=resolve(dir,name);if((await stat(p)).isDirectory())items.push(...await walk(p));else if(name!=='sw.js')items.push(p);}return items;}
   const files=await walk(out); const hash=createHash('sha256'); for(const file of files)hash.update(await readFile(file));
   const version=hash.digest('hex').slice(0,14),paths=files.map(p=>relative(out,p).replaceAll('\\\\','/'));

@@ -12,6 +12,10 @@ import {
   summarize,
   overall,
   latestResult,
+  assessmentSignature,
+  facetSummary,
+  skillProgress,
+  localDateKey,
   rosterFromText,
   addStudents,
   csvCell,
@@ -46,6 +50,17 @@ let state,
   review = false,
   busy = false,
   pendingUpdate = null;
+let studentDisplay = false;
+let resultFilters = { query: '', semester: '', from: '', to: '', section: '' };
+let reportScope = {
+  skill: '',
+  test: '',
+  section: '',
+  semester: '',
+  from: '',
+  to: '',
+};
+let rosterReviewData = null;
 const channel =
   typeof BroadcastChannel !== 'undefined'
     ? new BroadcastChannel('al-musaed-state')
@@ -157,7 +172,7 @@ function gradeTabs() {
 }
 function home() {
   const count = state.students.filter((s) => !s.archived).length;
-  return `${heading('مساحة معلمك', 'تشخيص واضح، وتدريب يبدأ من حاجة الطالب.')}
+  return `${heading('مساحة معلمك', 'تشخيص واضح، وتدريب يبدأ من حاجة الطالب.')}${backupNotice()}
  <section class="hero"><div class="hero-copy"><div class="eyebrow">${icon('book')} لغتي للصفوف الأولية</div><h2>اعرف أين يبدأ طالبك.</h2><p>اختبارات قصيرة لكل مهارة، ونتيجة تساعدك على اختيار الخطوة التالية. ابدأ بالصف ثم الطالب.</p>${btn('اختر الصف ' + icon('arrow'), 'scroll-grades')}</div><img src="./assets/learning-hero.webp" alt="كتاب مفتوح مع قلم وقطع تعليمية ونبتة"></section>
  <div class="metrics"><div class="metric"><strong>${ar(count)}</strong><small>طالب مسجل</small></div><div class="metric"><strong>${ar(state.results.length)}</strong><small>اختبار محفوظ</small></div><div class="metric"><strong>${ar(state.drafts.length)}</strong><small>اختبار يمكن استكماله</small></div></div>
  <div class="section-head" id="grades"><h2>اختر الصف</h2><small>ثلاثة صفوف · فصلان لكل صف</small></div><section class="grid3">${GRADES.map((g) => `<button class="grade-card" data-action="open-grade" data-grade="${g}"><div class="grade-card-head"><span class="grade-number">${ar(g)}</span>${icon('arrow')}</div><h3>الصف ${['', 'الأول', 'الثاني', 'الثالث'][g]}</h3><p class="muted">${['', 'الحروف والأصوات وبدايات القراءة', 'القراءة والظواهر والكتابة', 'الفهم والتراكيب والتعبير'][g]}</p><div class="card-footer"><span>${ar(state.students.filter((s) => s.grade === g && !s.archived).length)} طالب</span><span>فتح الصف</span></div></button>`).join('')}</section>
@@ -183,12 +198,12 @@ function studentRows(list) {
             o = r
               ? overall(summarize(r.cards, r.answers, r.scoring), r.scoring)
               : { percent: null, label: 'غير مختبر' };
-          return `<div class="student-row"><div class="student-info"><div class="avatar">${e(s.name[0])}</div><div><strong>${e(s.name)}</strong><small>الفصل ${e(s.section)}${s.guardian ? ' · ولي الأمر: ' + e(s.guardian) : ''}</small></div></div><div class="row student-actions">${badge(o.label, o.percent)}${btn('بدء اختبار', 'assess-student', 'small', 'data-id="' + s.id + '"')}${btn(icon('settings'), 'edit-student', 'secondary small', 'data-id="' + s.id + '" aria-label="تعديل ' + e(s.name) + '"')}</div></div>`;
+          return `<div class="student-row"><div class="student-info"><div class="avatar">${e(s.name[0])}</div><div><strong>${e(s.name)}</strong><small>الفصل ${e(s.section)}${s.guardian ? ' · ولي الأمر: ' + e(s.guardian) : ''}</small></div></div><div class="row student-actions">${r ? `<div class="last-test"><small>آخر اختبار · ${e([...new Set(r.cards.map((c) => c.skillTitle))].join('، '))}</small>${badge(o.label, o.percent)}</div>` : badge(o.label, o.percent)}${btn('بدء اختبار', 'assess-student', 'small', 'data-id="' + s.id + '"')}${btn(icon('settings'), 'edit-student', 'secondary small', 'data-id="' + s.id + '" aria-label="تعديل ' + e(s.name) + '"')}</div></div>`;
         })
         .join('')
     : empty(
         'لا يوجد طلاب في هذا النطاق',
-        'أضف الأسماء يدويًا أو الصقها من كشفك في Word أو Excel.',
+        'استورد ملف Word أو Excel، أو أضف الأسماء يدويًا.',
         btn(icon('add') + ' إضافة طالب', 'add-student'),
       );
 }
@@ -224,7 +239,7 @@ function setup() {
     shown = all.filter((s) => !domain || s.domain === domain),
     chosen = all.filter((s) => selected.has(s.id));
   const cardCount = chosen.reduce((n, s) => n + questionsFor(s).length, 0);
-  return `${heading('إعداد الاختبار', GRADE_NAMES[grade] + ' · اختر ما انتهى تدريسُه.', btn(icon('back') + ' الطلاب', 'nav', 'secondary small', 'data-route="students"'))}<div class="setup"><div class="panel"><div class="form-grid"><label class="span2">الطالب<select id="setup-student"><option value="">اختر الطالب</option>${ss.map((s) => `<option value="${s.id}" ${studentId === s.id ? 'selected' : ''}>${e(s.name)} · ${e(s.section)}</option>`).join('')}</select></label><label>الفصل الدراسي<select id="setup-semester"><option value="1" ${semester === 1 ? 'selected' : ''}>الفصل الأول</option><option value="2" ${semester === 2 ? 'selected' : ''}>الفصل الثاني</option></select></label><label>الوحدة<select id="setup-unit">${us.map((u) => `<option value="${u.unit}" ${unit === u.unit ? 'selected' : ''}>${ar(u.unit)} · ${e(u.name)}</option>`).join('')}</select></label></div><label class="checkline"><input type="checkbox" id="setup-cumulative" ${cumulative ? 'checked' : ''}>اختبار تراكمي يشمل الوحدات السابقة</label><div class="divider"></div><div class="row between"><h2>المهارات</h2><div class="checks-control">${btn('تحديد الظاهر', 'select-visible', 'ghost small')}${btn('إلغاء الكل', 'clear-selection', 'ghost small')}</div></div><label>مجال المهارة<select id="setup-domain"><option value="">جميع المجالات</option>${DOMAINS.map((d) => `<option ${domain === d ? 'selected' : ''}>${d}</option>`).join('')}</select></label><div class="skills-list" style="margin-top:16px">${shown.map((s) => `<label class="skill-option"><input type="checkbox" data-skill="${s.id}" ${selected.has(s.id) ? 'checked' : ''}><span><strong>${e(s.title)}</strong><small>${e(s.domain)} · الوحدة ${ar(s.unit)} · دليل الوحدة ص ${ar(s.source.page)}</small></span></label>`).join('')}</div></div><aside class="panel setup-side"><div class="eyebrow">اختبار حسب المنهج</div><h2>${ar(chosen.length)} مهارة مختارة</h2><p class="muted">${ar(cardCount)} بطاقة قابلة للتعديل</p><div class="notice">العينات من إعداد المساعد. راجع ملاءمتها لما درّسته، وافصل المهام المركبة عند الحاجة.</div>${btn('مراجعة عينات الاختبار', 'preview-cards', 'secondary', chosen.length ? '' : 'disabled')}${btn('بدء الاختبار ' + icon('arrow'), 'start-assessment', '', !chosen.length || !studentId ? 'disabled' : '')}<small>تصحيح يدوي · حفظ تلقائي للأحكام</small>${!ss.length ? `<div class="notice warning">أضف طالبًا أولًا.${btn('إضافة طالب', 'add-student', 'ghost small')}</div>` : ''}</aside></div>`;
+  return `${heading('إعداد الاختبار', GRADE_NAMES[grade] + ' · اختر ما انتهى تدريسُه.', btn(icon('back') + ' الطلاب', 'nav', 'secondary small', 'data-route="students"'))}<div class="setup"><div class="panel"><div class="form-grid"><label class="span2">الطالب<select id="setup-student"><option value="">اختر الطالب</option>${ss.map((s) => `<option value="${s.id}" ${studentId === s.id ? 'selected' : ''}>${e(s.name)} · ${e(s.section)}</option>`).join('')}</select></label><label>الفصل الدراسي<select id="setup-semester"><option value="1" ${semester === 1 ? 'selected' : ''}>الفصل الأول</option><option value="2" ${semester === 2 ? 'selected' : ''}>الفصل الثاني</option></select></label><label>الوحدة<select id="setup-unit">${us.map((u) => `<option value="${u.unit}" ${unit === u.unit ? 'selected' : ''}>${ar(u.unit)} · ${e(u.name)}</option>`).join('')}</select></label></div><label class="checkline"><input type="checkbox" id="setup-cumulative" ${cumulative ? 'checked' : ''}>اختبار تراكمي يشمل الوحدات السابقة</label><div class="divider"></div><div class="row preset-actions">${btn(grade === 1 ? 'حروف الوحدة' : 'تشخيص القراءة والظواهر', 'preset-core', 'secondary small')}${btn('الفهم والاستماع', 'preset-comprehension', 'secondary small')}${btn('الكتابة والإملاء', 'preset-writing', 'secondary small')}</div><small>اختيارات جاهزة من الوحدة الحالية، يمكن تعديلها.</small><div class="row between"><h2>المهارات</h2><div class="checks-control">${btn('تحديد الظاهر', 'select-visible', 'ghost small')}${btn('إلغاء الكل', 'clear-selection', 'ghost small')}</div></div><label>مجال المهارة<select id="setup-domain"><option value="">جميع المجالات</option>${DOMAINS.map((d) => `<option ${domain === d ? 'selected' : ''}>${d}</option>`).join('')}</select></label><div class="skills-list" style="margin-top:16px">${shown.map((s) => `<label class="skill-option"><input type="checkbox" data-skill="${s.id}" ${selected.has(s.id) ? 'checked' : ''}><span><strong>${e(s.title)}</strong><small>${e(s.domain)} · الوحدة ${ar(s.unit)} · دليل الوحدة ص ${ar(s.source.page)}</small></span></label>`).join('')}</div></div><aside class="panel setup-side"><div class="eyebrow">اختبار حسب المنهج</div><h2>${ar(chosen.length)} مهارة مختارة</h2><p class="muted">${ar(cardCount)} بطاقة قابلة للتعديل</p><div class="notice">العينات من إعداد المساعد. راجع ملاءمتها لما درّسته، وتأكد من النص والإجابة المتوقعة قبل البدء.</div>${btn('مراجعة عينات الاختبار', 'preview-cards', 'secondary', chosen.length ? '' : 'disabled')}${btn('بدء الاختبار ' + icon('arrow'), 'start-assessment', '', !chosen.length || !studentId ? 'disabled' : '')}<small>تصحيح يدوي · حفظ تلقائي للأحكام</small>${!ss.length ? `<div class="notice warning">أضف طالبًا أولًا.${btn('إضافة طالب', 'add-student', 'ghost small')}</div>` : ''}</aside></div>`;
 }
 let customCards = null;
 function chosenCards() {
@@ -245,7 +260,9 @@ function assessment() {
   const c = active.cards[cardIndex],
     answer = active.answers[c.id],
     pct = Math.round((100 * (cardIndex + 1)) / active.cards.length);
-  return `<section class="assessment-body"><div class="assessment-head"><div><h1>${e(student?.name || 'الطالب')}</h1><p>${GRADE_NAMES[active.grade]} · الفصل ${ar(active.semester)} · ${e(c.domain)}</p></div>${btn('حفظ واستكمال لاحقًا', 'pause', 'secondary small')}</div><div class="row between"><span class="badge blue">${e(c.skillTitle)}</span><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small></div><div class="progress"><i style="width:${pct}%"></i></div><div class="prompt-card"><small>المهمة</small><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div><div class="grading">${['independent', 'incorrect'].map((k) => `<button class="score-btn ${answer?.score === k ? 'selected' : ''}" data-action="score" data-score="${k}" aria-pressed="${answer?.score === k}">${SCORES[k]}</button>`).join('')}</div><div class="row between"><div class="row">${['assisted', 'not_assessed', 'not_taught'].map((k) => btn(SCORES[k], 'score', 'ghost small', 'data-score="' + k + '" aria-pressed="' + (answer?.score === k) + '"')).join('')}</div><div class="font-controls"><label for="font-size">حجم العرض</label><input id="font-size" type="range" min="36" max="120" value="${state.settings.fontSize}"></div></div><details class="teacher-hint"><summary>دليل المعلم والإجابة المتوقعة</summary>${c.teacherText ? `<p class="teacher-text">${e(c.teacherText)}</p>` : ''}<p>${e(c.expected)}</p><small>طبعة ${e(c.source.edition)} · دليل الوحدة ص ${ar(c.source.page)} · العينة من إعداد المساعد</small>${btn('تعديل هذه البطاقة', 'edit-active-card', 'ghost small')}</details><label class="assessment-note">ملاحظة على هذه البطاقة<textarea id="answer-note" placeholder="اختياري">${e(answer?.note || '')}</textarea></label><div class="assessment-tools">${btn(icon('back') + ' السابقة', 'previous', 'secondary', cardIndex === 0 ? 'disabled' : '')}${btn('مراجعة الاختبار', 'review', 'ghost')}${btn(cardIndex === active.cards.length - 1 ? 'مراجعة وحفظ' : 'التالية ' + icon('arrow'), 'next')}</div></section>`;
+  if (studentDisplay)
+    return `<section class="student-display"><div class="row between"><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small>${btn('العودة للمعلم', 'student-display', 'secondary small')}</div><div class="prompt-card"><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div></section>`;
+  return `<section class="assessment-body"><div class="assessment-head"><div><h1>${e(student?.name || 'الطالب')}</h1><p>${GRADE_NAMES[active.grade]} · الفصل ${ar(active.semester)} · ${e(c.domain)}</p></div><div class="row">${btn('عرض الطالب', 'student-display', 'secondary small')}${btn('حفظ واستكمال لاحقًا', 'pause', 'secondary small')}</div></div><div class="row between"><span class="badge blue">${e(c.skillTitle)}${c.facet ? ' · ' + e(c.facet) : ''}</span><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small></div><div class="progress"><i style="width:${pct}%"></i></div><div class="prompt-card"><small>المهمة</small><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div><div class="grading">${['independent', 'incorrect'].map((k) => `<button class="score-btn ${answer?.score === k ? 'selected' : ''}" data-action="score" data-score="${k}" aria-pressed="${answer?.score === k}">${SCORES[k]}</button>`).join('')}</div><details class="assessment-options"><summary>خيارات التقييم والملاحظات</summary><div class="row between"><div class="row">${['assisted', 'not_assessed', 'not_taught'].map((k) => btn(SCORES[k], 'score', 'ghost small', 'data-score="' + k + '" aria-pressed="' + (answer?.score === k) + '"')).join('')}</div><div class="font-controls"><label for="font-size">حجم العرض</label><input id="font-size" type="range" min="36" max="120" value="${state.settings.fontSize}"></div></div><details class="teacher-hint"><summary>دليل المعلم والإجابة المتوقعة</summary>${c.teacherText ? `<p class="teacher-text">${e(c.teacherText)}</p>` : ''}<p>${e(c.expected)}</p><small>طبعة ${e(c.source.edition)} · دليل الوحدة ص ${ar(c.source.page)} · العينة من إعداد المساعد</small>${btn('تعديل هذه البطاقة', 'edit-active-card', 'ghost small')}</details><label class="assessment-note">ملاحظة على هذه البطاقة<textarea id="answer-note" placeholder="اختياري">${e(answer?.note || '')}</textarea></label></details><div class="assessment-tools">${btn(icon('back') + ' السابقة', 'previous', 'secondary', cardIndex === 0 ? 'disabled' : '')}${btn('مراجعة الاختبار', 'review', 'ghost')}${btn(cardIndex === active.cards.length - 1 ? 'مراجعة وحفظ' : 'التالية ' + icon('arrow'), 'next')}</div></section>`;
 }
 function resultRows(rs) {
   return `<div class="results-list">${rs
@@ -256,18 +273,56 @@ function resultRows(rs) {
     })
     .join('')}</div>`;
 }
-function resultsView() {
-  const rs = state.results
-    .filter((r) => r.grade === grade)
+function filteredResults() {
+  return state.results
+    .filter((r) => {
+      const student = state.students.find((s) => s.id === r.studentId);
+      const day = localDateKey(r.completedAt);
+      return (
+        r.grade === grade &&
+        (!resultFilters.semester ||
+          r.semester === Number(resultFilters.semester)) &&
+        (!resultFilters.section ||
+          (r.sectionAtTest || student?.section) === resultFilters.section) &&
+        (!resultFilters.from || day >= resultFilters.from) &&
+        (!resultFilters.to || day <= resultFilters.to) &&
+        (!resultFilters.query ||
+          normalizeName(student?.name).includes(
+            normalizeName(resultFilters.query),
+          ))
+      );
+    })
     .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
-  return `${heading('نتائج التشخيص', 'تقارير الطالب والصف، محفوظة بحسب تاريخ الاختبار.', btn(icon('print') + ' تقرير الصف', 'class-report', 'secondary'))}${gradeTabs()}${rs.length ? resultRows(rs) : empty('لم تحفظ نتائج لهذا الصف', 'ابدأ اختبارًا لطالب، ثم احفظ النتيجة لتظهر هنا.', btn('فتح الطلاب', 'nav', '', 'data-route="students"'))}`;
 }
+function resultFilterHTML() {
+  const sections = [
+    ...new Set(
+      state.students.filter((s) => s.grade === grade).map((s) => s.section),
+    ),
+  ];
+  return `<div class="filters result-filters"><label>اسم الطالب<input id="result-query" type="search" value="${e(resultFilters.query)}"></label><label>الفصل الدراسي<select id="result-semester"><option value="">الفصلان</option>${[1, 2].map((n) => `<option value="${n}" ${String(n) === resultFilters.semester ? 'selected' : ''}>الفصل ${ar(n)}</option>`).join('')}</select></label><label>الفصل<select id="result-section"><option value="">جميع الفصول</option>${sections.map((x) => `<option ${x === resultFilters.section ? 'selected' : ''}>${e(x)}</option>`).join('')}</select></label><label>من تاريخ<input id="result-from" type="date" value="${e(resultFilters.from)}"></label><label>إلى تاريخ<input id="result-to" type="date" value="${e(resultFilters.to)}"></label></div>`;
+}
+function resultsView() {
+  const rs = filteredResults();
+  return `${heading('نتائج التشخيص', 'ابحث عن الطالب وحدد نطاق الاختبارات.', btn(icon('print') + ' تقرير الصف', 'class-report', 'secondary'))}${gradeTabs()}${resultFilterHTML()}<div id="filtered-results">${rs.length ? resultRows(rs) : empty('لا توجد نتائج في هذا النطاق', 'غيّر المرشحات أو ابدأ اختبارًا جديدًا.')}</div>`;
+}
+function backupNotice() {
+  if (!state.students.length && !state.results.length) return '';
+  const last = state.settings.lastBackupAt;
+  if (last && Date.now() - Date.parse(last) < 7 * 86400000) return '';
+  return `<div class="notice warning backup-reminder">${last ? 'مر أسبوع على آخر تصدير للنسخة الاحتياطية.' : 'لم تُصدّر نسخة احتياطية من هذا الجهاز بعد.'} ${btn('تصدير نسخة', 'backup', 'secondary small')}</div>`;
+}
+
 function settingsView() {
   const s = state.settings;
   return `${heading('إعدادات المساعد', 'بيانات المدرسة والتقييم والنسخ الاحتياطي.')}
- <div class="settings-grid"><form id="settings-form" class="panel"><h2>المدرسة والتقارير</h2><div class="form-grid"><label class="span2">اسم المدرسة<input name="school" value="${e(s.school)}" maxlength="150"></label><label>اسم المعلم<input name="teacher" value="${e(s.teacher)}" maxlength="150"></label><label>اسم المدير<input name="principal" value="${e(s.principal)}" maxlength="150"></label><label class="span2">اسم الموقّع أسفل التقرير<input name="signature" value="${e(s.signature)}" placeholder="يترك مكان التوقيع اليدوي أسفل التقرير" maxlength="150"></label></div><div class="divider"></div><h2>حدود التصنيف</h2><div class="form-grid"><label>متقن من نسبة<input name="mastery" type="number" min="1" max="100" required value="${s.mastery}"></label><label>متوسط من نسبة<input name="medium" type="number" min="0" max="99" required value="${s.medium}"></label><label>الحد الأدنى للعينات<input name="minSamples" type="number" min="1" max="50" step="1" required value="${s.minSamples}"></label><label>حجم بطاقة القراءة<input name="fontSize" type="number" min="36" max="120" required value="${s.fontSize}"></label></div><div class="notice">حدود تشخيصية مقترحة وليست لائحة تقويم رسمية. يحتفظ كل اختبار بالحدود التي أُجري بها.</div><button class="btn" type="submit">حفظ الإعدادات</button></form><div><section class="panel"><h2>نسخة تحفظ عملك</h2><p class="muted">الطلاب والنتائج على هذا المتصفح والجهاز. صدّر نسخة احتياطية بانتظام، وانقلها لجهازك الآخر عند الحاجة.</p><div class="row" style="margin-top:18px">${btn(icon('download') + ' تصدير نسخة', 'backup', 'secondary')}${btn(icon('restore') + ' استعادة نسخة', 'restore', 'secondary')}</div><input type="file" id="restore-file" accept=".json,application/json" hidden><div class="notice">الاستعادة تدمج السجلات وتحتفظ بالبيانات الموجودة. لا تُرفع النسخة إلى خادم.</div>${btn('طلب حفظ دائم على الجهاز', 'persist-storage', 'ghost small')}</section><section class="panel"><h2>عن التطبيق</h2><p>المساعد · مساعد المعلم</p><p class="muted">لغتي للصفوف الأولية · الإصدار ${VERSION}</p><p class="muted">${ar(curriculum.units.length)} وحدة · ${ar(curriculum.skills.length)} بند مهارة مع فروع القراءة والكتابة.</p><small>المصدر: أدلة الوحدات من الكتب المرفوعة بطبعة ١٤٤٨. البطاقات أمثلة من إعداد المساعد؛ يمكن تعديلها قبل الاختبار.</small></section></div></div>`;
+ <div class="settings-grid"><form id="settings-form" class="panel"><h2>المدرسة والتقارير</h2><div class="form-grid"><label class="span2">اسم المدرسة<input name="school" value="${e(s.school)}" maxlength="150"></label><label>اسم المعلم<input name="teacher" value="${e(s.teacher)}" maxlength="150"></label><label>اسم المدير<input name="principal" value="${e(s.principal)}" maxlength="150"></label><label class="span2">اسم الموقّع أسفل التقرير<input name="signature" value="${e(s.signature)}" placeholder="يترك مكان التوقيع اليدوي أسفل التقرير" maxlength="150"></label></div><div class="divider"></div><h2>حدود التصنيف</h2><div class="form-grid"><label>متقن من نسبة<input name="mastery" type="number" min="1" max="100" required value="${s.mastery}"></label><label>متوسط من نسبة<input name="medium" type="number" min="0" max="99" required value="${s.medium}"></label><label>الحد الأدنى للعينات<input name="minSamples" type="number" min="1" max="50" step="1" required value="${s.minSamples}"></label><label>حجم بطاقة القراءة<input name="fontSize" type="number" min="36" max="120" required value="${s.fontSize}"></label></div><div class="notice">حدود تشخيصية مقترحة وليست لائحة تقويم رسمية. يحتفظ كل اختبار بالحدود التي أُجري بها.</div><button class="btn" type="submit">حفظ الإعدادات</button></form><div><section class="panel"><h2>نسخة تحفظ عملك</h2><p id="last-backup">آخر تصدير: ${s.lastBackupAt ? date(s.lastBackupAt) : 'لم يُصدّر بعد'}</p><p class="muted">الطلاب والنتائج على هذا المتصفح والجهاز. صدّر نسخة احتياطية بانتظام، وانقلها لجهازك الآخر عند الحاجة.</p><div class="row" style="margin-top:18px">${btn(icon('download') + ' تصدير نسخة', 'backup', 'secondary')}${btn(icon('restore') + ' استعادة نسخة', 'restore', 'secondary')}</div><input type="file" id="restore-file" accept=".json,application/json" hidden><div class="notice">الاستعادة تدمج السجلات وتحتفظ بالبيانات الموجودة. لا تُرفع النسخة إلى خادم.</div>${btn('طلب حفظ دائم على الجهاز', 'persist-storage', 'ghost small')}</section><section class="panel"><h2>عن التطبيق</h2><p>المساعد · مساعد المعلم</p><p class="muted">لغتي للصفوف الأولية · الإصدار ${VERSION}</p><p class="muted">${ar(curriculum.units.length)} وحدة · ${ar(curriculum.skills.length)} بند مهارة مع فروع القراءة والكتابة.</p><small>المصدر: أدلة الوحدات من الكتب المرفوعة بطبعة ١٤٤٨. البطاقات أمثلة من إعداد المساعد؛ يمكن تعديلها قبل الاختبار.</small></section></div></div>`;
 }
 function render() {
+  if (studentDisplay && active && !review) {
+    app.innerHTML = assessment();
+    return;
+  }
   app.innerHTML = shell(
     route === 'home'
       ? home()
@@ -354,41 +409,145 @@ function renderRosterPreview() {
     <label>عمود اسم الطالب<select id="roster-name-column">${options(mapping.nameColumn)}</select></label>
     <label>عمود ولي الأمر<select id="roster-guardian-column"><option value="-1">غير موجود</option>${options(mapping.guardianColumn)}</select></label>
     <label>تجاوز أسطر العنوان<input id="roster-start-row" type="number" min="0" max="${rows.length}" value="${mapping.startRow}"></label></div>
-    <div class="notice">معاينة ${ar(candidates.length)} اسم قبل الإضافة. اختر الأعمدة إن لم تظهر الأسماء الصحيحة.</div>
+    <div class="notice">معاينة ${ar(candidates.length)} اسم صالح. استُبعد ${ar(Math.max(0, rows.length - mapping.startRow - candidates.length))} صف فارغ أو بيانات غير طلابية. جميع الأسماء متاحة للمراجعة والتعديل في الخطوة التالية. اختر الأعمدة إن لم تظهر الأسماء الصحيحة.</div>
     <div style="overflow:auto"><table class="roster-table"><thead><tr><th>اسم الطالب</th><th>ولي الأمر</th></tr></thead><tbody>${candidates
       .slice(0, 6)
       .map((x) => `<tr><td>${e(x.name)}</td><td>${e(x.guardian)}</td></tr>`)
       .join('')}</tbody></table></div>`;
 }
+function rosterReviewDialog(incoming, sectionName) {
+  rosterReviewData = { incoming, grade, section: sectionName };
+  const duplicate =
+    incoming.length - addStudents(state.students, incoming).added;
+  modal(
+    'مراجعة أسماء الكشف',
+    `<form id="roster-confirm-form"><div class="notice">${ar(incoming.length)} اسم صالح للمراجعة. ${ar(duplicate)} اسم موجود مسبقًا لن يضاف مرة أخرى. عدّل الاسم أو ألغِ اختياره قبل الاعتماد.</div><div class="roster-review-scroll"><table><thead><tr><th>إضافة</th><th>اسم الطالب</th><th>ولي الأمر</th></tr></thead><tbody>${incoming.map((x, i) => `<tr><td><input type="checkbox" data-roster-include="${i}" checked aria-label="إضافة الاسم ${i + 1}"></td><td><input data-roster-name="${i}" value="${e(x.name)}" maxlength="150" aria-label="اسم الطالب ${i + 1}"></td><td><input data-roster-guardian="${i}" value="${e(x.guardian)}" maxlength="150" aria-label="ولي الأمر ${i + 1}"></td></tr>`).join('')}</tbody></table></div><p class="error" id="form-error" role="alert"></p><div class="modal-actions"><button type="submit" class="btn">اعتماد الكشف</button></div></form>`,
+    { wide: true },
+  );
+}
 function previewDialog() {
   const cards = chosenCards();
   modal(
     'راجع عينات الاختبار',
-    `<p class="muted" style="margin-bottom:15px">عدّل النص أو السؤال لتناسب الحروف والظواهر التي درّستها. تعديل البطاقة يخص هذا الاختبار.</p><div class="preview-list">${cards.map((c) => `<div class="preview-card"><strong>${e(c.skillTitle)}</strong><p>${e(c.instruction)}</p><label>نص البطاقة<textarea data-card-edit="${c.id}">${e(c.display)}</textarea></label><label>المهمة<input data-card-instruction="${c.id}" value="${e(c.instruction)}"></label></div>`).join('')}</div>`,
+    `<p class="muted" style="margin-bottom:15px">عدّل النص والمهمة والإجابة لتناسب ما درّسته. عند تغيير النص المسموع أو الإملائي حدّث الإجابة المتوقعة أيضًا. تعديل البطاقة يخص هذا الاختبار.</p><div class="preview-list">${cards.map((c) => `<div class="preview-card"><strong>${e(c.skillTitle)}</strong><p>${e(c.instruction)}</p><label>نص البطاقة<textarea data-card-edit="${c.id}">${e(c.display)}</textarea></label><label>المهمة<input data-card-instruction="${c.id}" value="${e(c.instruction)}"></label>${c.teacherText ? `<label>النص المسموع أو الإملائي للمعلم<textarea data-card-teacher="${c.id}">${e(c.teacherText)}</textarea></label>` : ''}<label>الإجابة المتوقعة ومعيار الحكم<textarea data-card-expected="${c.id}">${e(c.expected)}</textarea></label></div>`).join('')}</div>`,
     { wide: true, actions: btn('حفظ تعديلات العينات', 'save-preview') },
   );
 }
 function studentReportHTML(r) {
   const s = state.students.find((s) => s.id === r.studentId),
     summary = summarize(r.cards, r.answers, r.scoring);
-  return `<article class="report-sheet" id="report"><header class="report-title"><p>المملكة العربية السعودية · وزارة التعليم</p><p>${e(state.settings.school || 'المدرسة')}</p><h2>تقرير اختبار لغتي التشخيصي</h2></header><div class="report-meta"><p><strong>الطالب:</strong> ${e(s?.name || '')}</p><p><strong>الصف وقت الاختبار:</strong> ${GRADE_NAMES[r.grade]}</p><p><strong>الفصل الدراسي:</strong> ${ar(r.semester)}</p><p><strong>تاريخ الاختبار:</strong> ${date(r.completedAt)}</p>${s?.guardian ? '<p><strong>ولي الأمر:</strong> ' + e(s.guardian) + '</p>' : ''}<p><strong>المعلم:</strong> ${e(state.settings.teacher)}</p></div><table><thead><tr><th>المهارة</th><th>نسبة الإتقان</th><th>التصنيف</th><th>ملاحظة</th></tr></thead><tbody>${summary.map((x) => `<tr><td>${e(x.title)}</td><td>${x.percent === null ? '—' : ar(x.percent) + '٪'}</td><td>${e(x.label)}</td><td>${x.limited ? 'عينة محدودة تحتاج تحققًا' : ''}</td></tr>`).join('')}</tbody></table>${r.note ? '<p class="report-note"><strong>ملاحظة المعلم:</strong> ' + e(r.note) + '</p>' : ''}<p class="report-note">نسبة الإتقان تعتمد على الإجابات الصحيحة المستقلة. المهارات غير المختبرة أو غير المدرّسة لا تُحسب ضعفًا.</p><footer class="report-foot"><p>المعلم: ${e(state.settings.signature || state.settings.teacher)}<br>التوقيع: __________________</p><p>مدير المدرسة: ${e(state.settings.principal)}<br>التوقيع: __________________</p></footer></article>`;
+  return `<article class="report-sheet" id="report"><header class="report-title"><p>المملكة العربية السعودية · وزارة التعليم</p><p>${e(state.settings.school || 'المدرسة')}</p><h2>تقرير اختبار لغتي التشخيصي</h2></header><div class="report-meta"><p><strong>الطالب:</strong> ${e(s?.name || '')}</p><p><strong>الصف وقت الاختبار:</strong> ${GRADE_NAMES[r.grade]}</p><p><strong>الفصل الدراسي:</strong> ${ar(r.semester)}</p><p><strong>تاريخ الاختبار:</strong> ${date(r.completedAt)}</p>${s?.guardian ? '<p><strong>ولي الأمر:</strong> ' + e(s.guardian) + '</p>' : ''}<p><strong>المعلم:</strong> ${e(state.settings.teacher)}</p></div><table><thead><tr><th>المهارة</th><th>نسبة الإتقان</th><th>التصنيف</th><th>ملاحظة</th></tr></thead><tbody>${summary.map((x) => `<tr><td>${e(x.title)}</td><td>${x.percent === null ? '—' : ar(x.percent) + '٪'}</td><td>${e(x.label)}</td><td>${x.limited ? 'عينة محدودة تحتاج تحققًا' : ''}</td></tr>`).join('')}</tbody></table>${detailedReportHTML(r)}${r.note ? '<p class="report-note"><strong>ملاحظة المعلم:</strong> ' + e(r.note) + '</p>' : ''}<p class="report-note">نسبة الإتقان تعتمد على الإجابات الصحيحة المستقلة. المهارات غير المختبرة أو غير المدرّسة لا تُحسب ضعفًا.</p><footer class="report-foot"><p>المعلم: ${e(state.settings.signature || state.settings.teacher)}<br>التوقيع: __________________</p><p>مدير المدرسة: ${e(state.settings.principal)}<br>التوقيع: __________________</p></footer></article>`;
+}
+function reportScopeControls() {
+  const rs = state.results.filter((r) => r.grade === grade);
+  const skills = new Map(
+    rs.flatMap((r) => r.cards.map((c) => [c.skillId, c.skillTitle])),
+  );
+  const tests = new Map();
+  for (const r of rs)
+    if (!tests.has(assessmentSignature(r)))
+      tests.set(assessmentSignature(r), r);
+  const options = (values, value) =>
+    values
+      .map(
+        ([id, title]) =>
+          `<option value="${e(id)}" ${id === value ? 'selected' : ''}>${e(title)}</option>`,
+      )
+      .join('');
+  return `<div class="filters report-scope"><label>مهارة محددة<select id="report-skill"><option value="">كل المهارات</option>${options([...skills], reportScope.skill)}</select></label><label>نفس عينات الاختبار<select id="report-test"><option value="">آخر اختبار لكل طالب</option>${options(
+    [...tests.values()].map((r) => [
+      r.id,
+      date(r.completedAt) +
+        ' · ' +
+        [...new Set(r.cards.map((c) => c.skillTitle))].join('، '),
+    ]),
+    reportScope.test,
+  )}</select></label><label>الفصل الدراسي<select id="report-semester"><option value="">الفصلان</option>${options(
+    [
+      ['1', 'الفصل الأول'],
+      ['2', 'الفصل الثاني'],
+    ],
+    reportScope.semester,
+  )}</select></label><label>الفصل<select id="report-section"><option value="">جميع الفصول</option>${options(
+    [
+      ...new Set(
+        state.students.filter((s) => s.grade === grade).map((s) => s.section),
+      ),
+    ].map((x) => [x, x]),
+    reportScope.section,
+  )}</select></label><label>من تاريخ<input id="report-from" type="date" value="${e(reportScope.from)}"></label><label>إلى تاريخ<input id="report-to" type="date" value="${e(reportScope.to)}"></label></div>`;
+}
+function scopedClassRows() {
+  const anchor = state.results.find((r) => r.id === reportScope.test);
+  return state.students
+    .filter(
+      (s) =>
+        s.grade === grade &&
+        !s.archived &&
+        (!reportScope.section || s.section === reportScope.section),
+    )
+    .map((s) => {
+      const eligible = state.results.filter(
+        (r) =>
+          r.grade === grade &&
+          r.studentId === s.id &&
+          (!reportScope.from ||
+            localDateKey(r.completedAt) >= reportScope.from) &&
+          (!reportScope.to || localDateKey(r.completedAt) <= reportScope.to) &&
+          (!reportScope.semester ||
+            r.semester === Number(reportScope.semester)) &&
+          (!reportScope.skill ||
+            r.cards.some((c) => c.skillId === reportScope.skill)) &&
+          (!anchor || assessmentSignature(r) === assessmentSignature(anchor)),
+      );
+      const r = latestResult(eligible, s.id);
+      const summary = r
+        ? summarize(r.cards, r.answers, r.scoring).filter(
+            (x) => !reportScope.skill || x.skillId === reportScope.skill,
+          )
+        : [];
+      const o = r
+        ? overall(summary, r.scoring)
+        : { percent: null, label: 'غير مختبر' };
+      return {
+        student: s,
+        result: r,
+        ...o,
+        attempted: summary.reduce((n, x) => n + x.attempted, 0),
+        total: r
+          ? r.cards.filter(
+              (c) => !reportScope.skill || c.skillId === reportScope.skill,
+            ).length
+          : 0,
+        scope: r
+          ? [
+              ...new Set(
+                r.cards
+                  .filter(
+                    (c) =>
+                      !reportScope.skill || c.skillId === reportScope.skill,
+                  )
+                  .map((c) => c.skillTitle),
+              ),
+            ].join('، ')
+          : '—',
+        limited: summary.some((x) => x.limited),
+      };
+    });
 }
 function classReportHTML() {
-  const list = state.students.filter((s) => s.grade === grade && !s.archived),
-    rows = list
-      .map((s) => {
-        const r = latestResult(
-            state.results.filter((r) => r.grade === grade),
-            s.id,
-          ),
-          o = r
-            ? overall(summarize(r.cards, r.answers, r.scoring), r.scoring)
-            : { percent: null, label: 'غير مختبر' };
-        return `<tr><td>${e(s.name)}</td><td>${e(s.section)}</td><td>${o.percent === null ? '—' : ar(o.percent) + '٪'}</td><td>${e(o.label)}</td><td>${r ? date(r.completedAt) : '—'}</td></tr>`;
-      })
-      .join('');
-  return `<article class="report-sheet" id="report"><header class="report-title"><p>وزارة التعليم · ${e(state.settings.school || 'المدرسة')}</p><h2>تقرير الصف في لغتي</h2><p>${GRADE_NAMES[grade]} · ${date(new Date().toISOString())}</p></header><table><thead><tr><th>الطالب</th><th>الفصل</th><th>نسبة الإتقان</th><th>الحالة</th><th>آخر اختبار</th></tr></thead><tbody>${rows || '<tr><td colspan="5">لا يوجد طلاب مسجلون في هذا الصف.</td></tr>'}</tbody></table><p class="report-note">يعرض آخر اختبار محفوظ لكل طالب في هذا الصف. قد تختلف المهارات المختبرة بين الطلاب؛ النسب لا تمثل ترتيبًا موحدًا بينهم.</p><footer class="report-foot"><p>المعلم: ${e(state.settings.teacher)}</p><p>التوقيع: __________________</p></footer></article>`;
+  const rows = scopedClassRows();
+  return `<article class="report-sheet" id="report"><header class="report-title"><p>وزارة التعليم · ${e(state.settings.school || 'المدرسة')}</p><h2>تقرير الصف في لغتي</h2><p>${GRADE_NAMES[grade]} · ${date(new Date().toISOString())}</p><p>${reportScope.test ? 'نفس عينات الاختبار' : reportScope.skill ? 'مهارة محددة' : 'آخر اختبار لكل طالب'}</p></header><table><thead><tr><th>الطالب</th><th>الفصل</th><th>نطاق الاختبار</th><th>البنود المقيمة</th><th>نسبة الإتقان</th><th>الحالة</th><th>آخر اختبار</th></tr></thead><tbody>${rows.map((x) => `<tr><td>${e(x.student.name)}</td><td>${e(x.student.section)}</td><td>${e(x.scope)}</td><td>${x.result ? ar(x.attempted) + ' من ' + ar(x.total) : '—'}</td><td>${x.percent === null ? '—' : ar(x.percent) + '٪'}</td><td>${e(x.label)}${x.limited ? ' · عينة محدودة' : ''}</td><td>${x.result ? date(x.result.completedAt) : '—'}</td></tr>`).join('') || '<tr><td colspan="7">لا يوجد طلاب في هذا النطاق.</td></tr>'}</tbody></table><p class="report-note">${reportScope.test ? 'يشمل النتائج ذات البطاقات ومعايير التصنيف المطابقة للاختبار المختار.' : 'حدد نفس عينات الاختبار للمقارنة الموحدة؛ قد تختلف مهارات وعينات آخر اختبار بين الطلاب.'} غير المختبر لا يُحسب ضعيفًا. راجع عدد البنود المقيمة؛ اختلافه يعني أن الاختبار غير مكتمل للمقارنة. ${reportScope.from || reportScope.to ? 'نطاق التاريخ: ' + e(reportScope.from || 'البداية') + ' إلى ' + e(reportScope.to || 'اليوم') : ''}</p><footer class="report-foot"><p>المعلم: ${e(state.settings.teacher)}</p><p>التوقيع: __________________</p></footer></article>`;
 }
+function detailedReportHTML(r) {
+  const failures = r.cards.filter((c) =>
+    ['incorrect', 'assisted'].includes(r.answers[c.id]?.score),
+  );
+  const facets = facetSummary(r);
+  const progress = skillProgress(r, state.results);
+  return `${facets.length ? `<h3>تفصيل الظواهر</h3><table><thead><tr><th>الفرع</th><th>نسبة الإتقان</th><th>ملاحظة</th></tr></thead><tbody>${facets.map((x) => `<tr><td>${e(x.title)}</td><td>${x.percent === null ? '—' : ar(x.percent) + '٪'}</td><td>${x.limited ? 'عينة محدودة تحتاج تحققًا' : ''}</td></tr>`).join('')}</tbody></table>` : ''}<h3>بنود تحتاج تدريبًا</h3>${failures.length ? `<table class="item-details"><thead><tr><th>المهارة والعينة</th><th>المهمة ومعيار الحكم</th><th>الحكم</th><th>ملاحظة المعلم</th></tr></thead><tbody>${failures.map((c) => `<tr><td>${e(c.skillTitle)}${c.facet ? ' · ' + e(c.facet) : ''}<br>${e(c.teacherText || c.display)}</td><td>${e(c.instruction)}<br><small>${e(c.expected)}</small></td><td>${e(SCORES[r.answers[c.id].score])}</td><td>${e(r.answers[c.id].note || '')}</td></tr>`).join('')}</tbody></table>` : '<p>لم تسجل إجابات خاطئة أو بمساعدة في البنود المقيمة.</p>'}<h3>متابعة نفس المهارة والعينات</h3><table><thead><tr><th>المهارة</th><th>السابقة</th><th>الحالية</th><th>التغير</th></tr></thead><tbody>${progress.map((x) => `<tr><td>${e(x.title)}</td><td>${x.previousPercent === null ? 'لا توجد نتيجة مطابقة' : ar(x.previousPercent) + '٪ · ' + date(x.previousAt)}</td><td>${x.percent === null ? '—' : ar(x.percent) + '٪'}</td><td>${x.delta === null ? '—' : (x.delta > 0 ? '+' : '') + ar(x.delta) + ' نقطة مئوية'}</td></tr>`).join('')}</tbody></table><p class="report-note">تُحسب المقارنة فقط عند تطابق العينات والمهمات والمعايير والبنود المقيمة. اختلاف العينات يحتاج قراءة النتائج كلٌّ على حدة.</p>`;
+}
+
 function reportModal(html, kind, id = '') {
   const result =
     kind === 'student' ? state.results.find((r) => r.id === id) : null;
@@ -405,7 +564,7 @@ function reportModal(html, kind, id = '') {
       : '';
   modal(
     kind === 'class' ? 'تقرير الصف' : 'تقرير الطالب',
-    `<div class="row report-actions">${btn(icon('print') + ' طباعة أو حفظ PDF', 'print')}${btn(icon('download') + ' تصدير الجدول CSV', 'export-csv', 'secondary', 'data-kind="' + kind + '" data-id="' + id + '"')}${kind === 'class' ? btn('تحديث التقرير', 'refresh-report', 'ghost') : ''}${nextAction}</div>${html}`,
+    `<div class="row report-actions">${btn(icon('print') + ' طباعة أو حفظ PDF', 'print')}${btn(icon('download') + ' تصدير الجدول CSV', 'export-csv', 'secondary', 'data-kind="' + kind + '" data-id="' + id + '"')}${kind === 'class' ? btn('تحديث التقرير', 'refresh-report', 'ghost') : ''}${nextAction}</div>${kind === 'class' ? reportScopeControls() : ''}${html}`,
     { wide: true },
   );
 }
@@ -421,19 +580,24 @@ function exportCSV(kind, id) {
   let rows;
   if (kind === 'class') {
     rows = [
-      ['الطالب', 'الفصل', 'نسبة الإتقان', 'الحالة'],
-      ...state.students
-        .filter((s) => s.grade === grade && !s.archived)
-        .map((s) => {
-          const r = latestResult(
-              state.results.filter((x) => x.grade === grade),
-              s.id,
-            ),
-            o = r
-              ? overall(summarize(r.cards, r.answers, r.scoring), r.scoring)
-              : { percent: null, label: 'غير مختبر' };
-          return [s.name, s.section, o.percent ?? '', o.label];
-        }),
+      [
+        'الطالب',
+        'الفصل',
+        'نطاق الاختبار',
+        'البنود المقيمة',
+        'إجمالي البنود',
+        'نسبة الإتقان',
+        'الحالة',
+      ],
+      ...scopedClassRows().map((x) => [
+        x.student.name,
+        x.student.section,
+        x.scope,
+        x.attempted,
+        x.total,
+        x.percent ?? '',
+        x.label,
+      ]),
     ];
   } else {
     const r = state.results.find((r) => r.id === id);
@@ -520,6 +684,29 @@ document.addEventListener('click', async (event) => {
     else if (a === 'assess-student') {
       customCards = null;
       initializeSetup(t.dataset.id);
+    } else if (a === 'student-display') {
+      if (!studentDisplay) await saveCurrentNote();
+      studentDisplay = !studentDisplay;
+      render();
+    } else if (a.startsWith('preset-')) {
+      const list = availableSkills();
+      selected = new Set(
+        list
+          .filter((s) =>
+            a === 'preset-writing'
+              ? ['copy', 'dictation'].includes(s.kind)
+              : a === 'preset-comprehension'
+                ? ['listening', 'literal'].includes(s.kind)
+                : grade === 1
+                  ? s.kind === 'letter'
+                  : s.kind === 'reading' ||
+                    /الشمسية|القمرية|تنوين|ه وت وة/.test(s.title),
+          )
+          .map((s) => s.id),
+      );
+      customCards = null;
+      domain = '';
+      render();
     } else if (a === 'select-visible') {
       availableSkills()
         .filter((s) => !domain || s.domain === domain)
@@ -534,8 +721,28 @@ document.addEventListener('click', async (event) => {
       customCards = customCards || {};
       for (const area of dialogs.querySelectorAll('[data-card-edit]')) {
         if (!area.value.trim()) throw Error('لا تترك بطاقة فارغة.');
+        if (
+          !dialogs
+            .querySelector(
+              `[data-card-expected="${CSS.escape(area.dataset.cardEdit)}"]`,
+            )
+            .value.trim()
+        )
+          throw Error('اكتب الإجابة المتوقعة ومعيار الحكم لكل بطاقة.');
         const id = area.dataset.cardEdit;
+        const teacherArea = dialogs.querySelector(
+          `[data-card-teacher="${CSS.escape(id)}"]`,
+        );
+        if (teacherArea && !teacherArea.value.trim())
+          throw Error('اكتب النص المسموع أو الإملائي.');
         customCards[id] = {
+          expected: dialogs
+            .querySelector(`[data-card-expected="${CSS.escape(id)}"]`)
+            .value.trim(),
+          teacherText:
+            dialogs
+              .querySelector(`[data-card-teacher="${CSS.escape(id)}"]`)
+              ?.value.trim() || '',
           display: area.value.trim(),
           instruction: dialogs
             .querySelector(`[data-card-instruction="${CSS.escape(id)}"]`)
@@ -552,6 +759,8 @@ document.addEventListener('click', async (event) => {
       active = {
         id: uid(),
         studentId,
+        sectionAtTest:
+          state.students.find((s) => s.id === studentId)?.section || '',
         grade,
         semester,
         unit,
@@ -572,6 +781,7 @@ document.addEventListener('click', async (event) => {
         note: '',
       };
       cardIndex = 0;
+      studentDisplay = false;
       review = false;
       await saveDraft();
       route = 'assessment';
@@ -623,6 +833,7 @@ document.addEventListener('click', async (event) => {
     } else if (a === 'resume') {
       active = structuredClone(state.drafts.find((d) => d.id === t.dataset.id));
       grade = active.grade;
+      studentDisplay = false;
       cardIndex = Math.max(
         0,
         active.cards.findIndex((c) => !active.answers[c.id]),
@@ -653,6 +864,7 @@ document.addEventListener('click', async (event) => {
       active = {
         id: uid(),
         studentId: next.id,
+        sectionAtTest: next.section,
         grade: result.grade,
         semester: result.semester,
         unit: result.unit,
@@ -665,6 +877,7 @@ document.addEventListener('click', async (event) => {
         note: '',
       };
       cardIndex = 0;
+      studentDisplay = false;
       review = false;
       grade = result.grade;
       studentId = next.id;
@@ -675,8 +888,20 @@ document.addEventListener('click', async (event) => {
     } else if (a === 'student-report') {
       const r = state.results.find((r) => r.id === t.dataset.id);
       reportModal(studentReportHTML(r), 'student', r.id);
-    } else if (a === 'class-report') reportModal(classReportHTML(), 'class');
-    else if (a === 'refresh-report') {
+    } else if (a === 'class-report') {
+      const latest = state.results
+        .filter((r) => r.grade === grade)
+        .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
+      reportScope = {
+        skill: '',
+        test: latest?.id || '',
+        section: '',
+        semester: '',
+        from: '',
+        to: '',
+      };
+      reportModal(classReportHTML(), 'class');
+    } else if (a === 'refresh-report') {
       const fresh = await readState();
       state = fresh;
       dialogs.querySelector('#report').outerHTML = classReportHTML();
@@ -692,7 +917,12 @@ document.addEventListener('click', async (event) => {
         ),
         'المساعد-نسخة-' + new Date().toISOString().slice(0, 10) + '.json',
       );
-      toast('نُزّلت النسخة الاحتياطية. احتفظ بها في مكان آمن.');
+      await persist({
+        ...state,
+        settings: { ...state.settings, lastBackupAt: new Date().toISOString() },
+      });
+      render();
+      toast('بدأ تنزيل النسخة الاحتياطية. تحقق من حفظ الملف في التنزيلات.');
     } else if (a === 'restore') document.querySelector('#restore-file').click();
     else if (a === 'confirm-restore') {
       const next = mergeBackup(state, pendingBackup);
@@ -712,16 +942,25 @@ document.addEventListener('click', async (event) => {
       const c = active.cards[cardIndex];
       modal(
         'تعديل بطاقة الاختبار',
-        `<label>النص<textarea id="edit-display">${e(c.display)}</textarea></label><label>المهمة<input id="edit-instruction" value="${e(c.instruction)}"></label><label>دليل المعلم<textarea id="edit-expected">${e(c.expected)}</textarea></label>`,
+        `<label>النص<textarea id="edit-display">${e(c.display)}</textarea></label><label>المهمة<input id="edit-instruction" value="${e(c.instruction)}"></label>${c.teacherText ? `<label>النص المسموع أو الإملائي للمعلم<textarea id="edit-teacher">${e(c.teacherText)}</textarea></label>` : ''}<label>الإجابة المتوقعة ومعيار الحكم<textarea id="edit-expected">${e(c.expected)}</textarea></label>`,
         { actions: btn('حفظ البطاقة', 'save-active-card') },
       );
     } else if (a === 'save-active-card') {
       const c = active.cards[cardIndex],
         display = document.querySelector('#edit-display').value.trim();
       if (!display) throw Error('لا تترك البطاقة فارغة.');
+      if (!document.querySelector('#edit-expected').value.trim())
+        throw Error('اكتب الإجابة المتوقعة ومعيار الحكم.');
+      if (
+        c.teacherText &&
+        !document.querySelector('#edit-teacher').value.trim()
+      )
+        throw Error('اكتب النص المسموع أو الإملائي.');
       c.display = display;
       c.instruction = document.querySelector('#edit-instruction').value;
       c.expected = document.querySelector('#edit-expected').value;
+      if (c.teacherText)
+        c.teacherText = document.querySelector('#edit-teacher').value.trim();
       delete active.answers[c.id];
       await saveDraft();
       closeModal();
@@ -786,6 +1025,26 @@ document.addEventListener('submit', async (ev) => {
         ? rosterFromText(pasted, grade, d.get('section'))
         : fileRosterRows();
       if (!incoming.length) throw Error('لم توجد أسماء صالحة.');
+      rosterReviewDialog(incoming, d.get('section'));
+    } else if (formId === 'roster-confirm-form') {
+      const incoming = rosterReviewData.incoming.flatMap((x, i) => {
+        if (!dialogs.querySelector(`[data-roster-include="${i}"]`).checked)
+          return [];
+        const name = normalizeName(
+          dialogs.querySelector(`[data-roster-name="${i}"]`).value,
+        );
+        if (!name) throw Error('اكتب الاسم أو ألغِ اختياره.');
+        return [
+          {
+            ...x,
+            name,
+            guardian: normalizeName(
+              dialogs.querySelector(`[data-roster-guardian="${i}"]`).value,
+            ),
+          },
+        ];
+      });
+      if (!incoming.length) throw Error('اختر اسمًا واحدًا على الأقل.');
       const out = addStudents(state.students, incoming);
       await persist({ ...state, students: out.students });
       closeModal();
@@ -816,7 +1075,30 @@ document.addEventListener('submit', async (ev) => {
 document.addEventListener('change', async (ev) => {
   const t = ev.target;
   try {
-    if (t.id === 'section-filter') {
+    if (
+      t.id.startsWith('report-') &&
+      [
+        'report-skill',
+        'report-test',
+        'report-section',
+        'report-semester',
+        'report-from',
+        'report-to',
+      ].includes(t.id)
+    ) {
+      reportScope[t.id.slice(7)] = t.value;
+      dialogs.querySelector('#report').outerHTML = classReportHTML();
+    } else if (
+      [
+        'result-semester',
+        'result-section',
+        'result-from',
+        'result-to',
+      ].includes(t.id)
+    ) {
+      resultFilters[t.id.slice(7)] = t.value;
+      render();
+    } else if (t.id === 'section-filter') {
       section = t.value;
       document.querySelector('#student-list').innerHTML =
         studentRows(students());
@@ -940,7 +1222,13 @@ document.addEventListener('change', async (ev) => {
 });
 document.addEventListener('input', (ev) => {
   const t = ev.target;
-  if (t.id === 'student-search') {
+  if (t.id === 'result-query') {
+    resultFilters.query = t.value;
+    const rs = filteredResults();
+    document.querySelector('#filtered-results').innerHTML = rs.length
+      ? resultRows(rs)
+      : '<p>لا توجد نتائج في هذا النطاق.</p>';
+  } else if (t.id === 'student-search') {
     query = t.value;
     document.querySelector('#student-list').innerHTML = studentRows(students());
   } else if (t.id === 'font-size') {
@@ -992,28 +1280,34 @@ try {
   state.settings = { ...DEFAULT_SETTINGS, ...state.settings };
   render();
   if ('serviceWorker' in navigator) {
-    const hadController = Boolean(navigator.serviceWorker.controller);
-    const reg = await navigator.serviceWorker.register('./sw.js');
-    if (reg.waiting) {
-      pendingUpdate = reg.waiting;
-      render();
-    }
-    reg.addEventListener('updatefound', () => {
-      const worker = reg.installing;
-      worker?.addEventListener('statechange', () => {
-        if (worker.state === 'installed' && hadController) {
-          pendingUpdate = worker;
-          render();
+    try {
+      const hadController = Boolean(navigator.serviceWorker.controller);
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      if (reg.waiting) {
+        pendingUpdate = reg.waiting;
+        render();
+      }
+      reg.addEventListener('updatefound', () => {
+        const worker = reg.installing;
+        worker?.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && hadController) {
+            pendingUpdate = worker;
+            render();
+          }
+        });
+      });
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (hadController && !refreshing) {
+          refreshing = true;
+          location.reload();
         }
       });
-    });
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (hadController && !refreshing) {
-        refreshing = true;
-        location.reload();
-      }
-    });
+    } catch {
+      toast(
+        'تعذر تفعيل العمل دون اتصال. يمكنك استخدام التطبيق الآن وتصدير نسخة احتياطية.',
+      );
+    }
   }
 } catch (error) {
   console.error(error);

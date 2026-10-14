@@ -1,4 +1,4 @@
-export const VERSION = '0.2.0';
+export const VERSION = '0.3.0';
 export const GRADES = [1, 2, 3];
 export const GRADE_NAMES = {
   1: 'الأول الابتدائي',
@@ -39,6 +39,19 @@ export const emptyState = () => ({
   settings: { ...DEFAULT_SETTINGS },
 });
 export const uid = () => crypto.randomUUID();
+export function localDateKey(
+  value,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(value));
+  const values = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
 export function classify(percent, settings = DEFAULT_SETTINGS) {
   if (percent === null) return 'غير مقيم';
   return percent >= settings.mastery
@@ -90,6 +103,91 @@ export function latestResult(results, studentId) {
     results
       .filter((r) => r.studentId === studentId)
       .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0] || null
+  );
+}
+// Comparison requires identical material and thresholds, rather than equal percentages alone.
+export function assessmentSignature(result, skillId = '') {
+  return JSON.stringify([
+    result.grade,
+    result.semester,
+    result.cards
+      .filter((c) => !skillId || c.skillId === skillId)
+      .map((c) => [
+        c.skillId,
+        c.display,
+        c.instruction,
+        c.teacherText || '',
+        c.expected,
+        c.facet || '',
+      ]),
+    result.scoring?.mastery ?? 80,
+    result.scoring?.medium ?? 50,
+    result.scoring?.minSamples ?? 5,
+  ]);
+}
+export function facetSummary(result) {
+  const cards = result.cards
+    .filter((c) => c.facet)
+    .map((c) => ({
+      ...c,
+      skillId: c.skillId + ':' + c.facet,
+      skillTitle: c.skillTitle + ' · ' + c.facet,
+    }));
+  return summarize(cards, result.answers, result.scoring);
+}
+export function skillProgress(result, results) {
+  return summarize(result.cards, result.answers, result.scoring).map(
+    (current) => {
+      const previous = results
+        .filter(
+          (r) =>
+            r.id !== result.id &&
+            r.studentId === result.studentId &&
+            r.grade === result.grade &&
+            r.semester === result.semester &&
+            r.completedAt < result.completedAt &&
+            r.cards.some((c) => c.skillId === current.skillId) &&
+            JSON.stringify(
+              r.cards
+                .filter(
+                  (c) =>
+                    c.skillId === current.skillId &&
+                    ['independent', 'assisted', 'incorrect'].includes(
+                      r.answers[c.id]?.score,
+                    ),
+                )
+                .map((c) => c.id),
+            ) ===
+              JSON.stringify(
+                result.cards
+                  .filter(
+                    (c) =>
+                      c.skillId === current.skillId &&
+                      ['independent', 'assisted', 'incorrect'].includes(
+                        result.answers[c.id]?.score,
+                      ),
+                  )
+                  .map((c) => c.id),
+              ) &&
+            assessmentSignature(r, current.skillId) ===
+              assessmentSignature(result, current.skillId),
+        )
+        .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
+      const prior =
+        previous &&
+        summarize(previous.cards, previous.answers, previous.scoring).find(
+          (s) => s.skillId === current.skillId,
+        );
+      return {
+        ...current,
+        previousAt: previous?.completedAt,
+        previousPercent: prior?.percent ?? null,
+        delta:
+          prior?.percent != null && current.percent != null
+            ? current.percent - prior.percent
+            : null,
+      };
+    },
   );
 }
 export const escapeHTML = (value) =>
