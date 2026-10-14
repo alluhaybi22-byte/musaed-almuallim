@@ -1,0 +1,75 @@
+[
+  {
+    "name": "Manual letter assessment, correction, draft and student report",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": ["grade and student selection", "letter skills and curriculum references", "manual grading", "changing a previous judgement", "saved draft and resume", "durable result", "student report and PDF print action", "CSV export"],
+    "description": "Complete a six-card first-grade fatha test, change a judgement and verify the saved report after reload.",
+    "steps": [
+      "Open الصف الأول, add a student named تجربة التشخيص in section أ, then start their assessment.",
+      "Use إلغاء الكل, select only يقرأ حروف الوحدة مع الفتحة in unit 1 and start the test. Confirm a source page reference and a legible Arabic letter.",
+      "Grade the first card صحيح مستقل and move to the second. Grade the second بمساعدة, then use حفظ واستكمال لاحقًا.",
+      "Reload, click استكمال, return to the first card using السابقة twice and change its judgement to غير صحيح. Advance to the third card.",
+      "Grade cards three through six صحيح مستقل. Use مراجعة وحفظ and save the result with note تدريب إضافي على الفتحة.",
+      "Confirm the student report shows ٦٧٪ and متوسط and the note, with actions طباعة أو حفظ PDF and تصدير الجدول CSV. Export the CSV.",
+      "Close the report, reload and reopen the saved result from النتائج. Confirm the same percentage and note; the student report omits duration and item-count summaries."
+    ],
+    "expected": "One durable result shows ٦٧٪ and متوسط, previous judgement was replaced, the report and CSV are available and the saved draft is gone."
+  },
+  {
+    "name": "Mobile roster validation, import, editing and archive recovery",
+    "viewport": "mobile",
+    "covers": ["mobile navigation and forms", "empty-name guardrail", "roster paste and duplicate prevention", "guardian data", "student editing", "archive and unarchive", "search and section filtering"],
+    "description": "Manage a small roster on mobile and verify validation, duplicate prevention and recoverable archiving.",
+    "steps": [
+      "Open الصف الثاني and إضافة طالب. Leave the name empty and try saving; the form must remain and no student is added. Close it.",
+      "Open لصق كشف أو استيراد CSV and paste a two-column CSV headed اسم الطالب,ولي الأمر with rows طالب كشف ألف,ولي ألف and طالب كشف باء,ولي باء. Add it to section ب.",
+      "Import the same two rows again and verify each name appears only once.",
+      "Use the edit control on طالب كشف ألف, rename them طالب كشف معدل and save. Search for معدل and filter section ب.",
+      "Edit طالب كشف معدل, archive them, open الطلاب المؤرشفون and restore them using إعادة للصف.",
+      "Reload and confirm both names and guardian information are retained, with no horizontal overflow."
+    ],
+    "expected": "Two distinct students persist on mobile, the renamed student and guardian are correct, the archived student can be restored and an empty name creates no record."
+  },
+  {
+    "name": "Backup exports and repeated merge preserve student and draft",
+    "viewport": "desktop",
+    "covers": ["backup export", "backup restore and merge", "duplicate merge prevention", "draft retention", "local-only records"],
+    "description": "Export a real backup from a saved draft and merge it twice without duplicating records.",
+    "steps": [
+      "Add a first-grade student named نسخة احتياطية in section ج. Start a unit 1 test of only the fatha skill, grade one card and save for later.",
+      "Open الإعدادات and export a backup using تصدير نسخة; retain the downloaded JSON file.",
+      "Restore that downloaded file through the restore file input and confirm دمج النسخة. Restore and merge the same file again.",
+      "Return home and verify exactly one student and one resumable assessment, then reload and resume the draft."
+    ],
+    "expected": "The exported JSON is accepted, repeated merge adds no duplicate student or draft, and the original judgement can be resumed after reload."
+  },
+  {
+    "name": "Second-semester routes and editable assessment cards for grades two and three",
+    "viewport": "mobile",
+    "covers": ["grade two and three routes", "semester two and unit selection", "cumulative skill scope", "domain filtering and skill selection", "preview sample editing", "active-card editing resets judgement", "font control"],
+    "description": "Exercise second-semester assessments and teacher-controlled sample editing on mobile.",
+    "steps": [
+      "Add a student named اختبار ثاني in grade 2 and one named اختبار ثالث in grade 3.",
+      "For grade 2 choose الفصل الثاني and its first unit. Clear skill selection, select the unit reading-words skill, preview samples, edit one sample to كِتَابٌ and save the preview.",
+      "Start the test, grade its first card, use تعديل بطاقة الاختبار to change the text to قَلَمٌ and save. Verify the old judgement is cleared and a new judgement is required. Save for later.",
+      "For grade 3 choose الفصل الثاني and unit 8. Toggle cumulative scope to see earlier units, filter a domain, then select a reading skill and start its assessment.",
+      "Verify the header identifies grade 3 and semester 2, use font enlargement controls and save for later. Reload and verify both drafts remain."
+    ],
+    "expected": "Both second-semester routes run on mobile; edited cards show the teacher text, active-card editing clears its judgement, and both drafts persist."
+  },
+  {
+    "name": "School settings, class report and offline persistence",
+    "viewport": "desktop",
+    "covers": ["school and teacher settings", "mastery thresholds validation", "class report and untested students", "same-window report refresh", "class CSV export", "service worker and offline reload", "persistent settings"],
+    "description": "Retain settings, show untested students accurately and reload the app without connectivity.",
+    "steps": [
+      "Add a grade 3 student named غير مختبر in section د. In الإعدادات enter مدرسة تجريبية and معلم تجريبي, set mastery 80 and medium 50 and save.",
+      "Try an invalid threshold configuration with mastery below medium; verify a visible validation error, then restore 80 and 50 and save.",
+      "Open النتائج for grade 3 and تقرير الصف. Verify the school and student, and that the untested student is labeled غير مختبر with no false weak score.",
+      "Refresh the report using تحديث التقرير in its current dialog and export the class CSV. Close the dialog and reload once to activate the offline cache.",
+      "Disable network access in the test browser, reload the application, open the student list and settings, then re-enable the network."
+    ],
+    "expected": "Settings persist, invalid thresholds are rejected, the report labels untested students correctly, CSV exports and the cached app opens offline with the saved student."
+  }
+]

@@ -5,3 +5,4 @@ test-results/
 .env*
 .wrangler/
 handoff-private/
+deploy/appdeploy/stage/
