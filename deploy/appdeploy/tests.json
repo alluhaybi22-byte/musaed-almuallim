@@ -44,12 +44,13 @@
       "Excel XLSX/XLS import",
       "Word DOCX import",
       "sheet and column selection",
-      "invalid file rejection"
+      "invalid file rejection",
+      "teacher and principal footer exclusion"
     ],
     "description": "Manage a small roster on mobile and verify validation, duplicate prevention and recoverable archiving.",
     "steps": [
       "On mobile open الصف الثاني and the import dialog استيراد Excel أو Word / لصق كشف. The file picker explicitly accepts XLSX, XLS and DOCX and column/sheet controls appear after choosing a file.",
-      "Using a real locally generated Excel workbook with columns رقم,ولي الأمر,اسم الطالب and two student rows, select it in ملف الكشف. Confirm the preview finds the name and guardian columns; import the rows.",
+      "Using a real locally generated Excel workbook with columns رقم,ولي الأمر,اسم الطالب and two student rows, followed by a footer with معلم المادة : معلم تجريبي in the name column and مدير المدرسة : مدير تجريبي elsewhere, select it in ملف الكشف. Confirm the preview counts only two students and detects the name and guardian columns; import the rows. Neither staff footer appears as a student after reload.",
       "Import the same workbook again and verify no duplicate names are added. With a real DOCX containing a table of one distinct student and guardian, import it and confirm the student's name and guardian are shown.",
       "Open النسخ واللصق بدلًا من الملف and paste one new student; add to section ب. Verify paste remains usable independently of file import.",
       "Edit the pasted student's name, archive them, open الطلاب المؤرشفون and restore them. Reload and search for the updated name.",

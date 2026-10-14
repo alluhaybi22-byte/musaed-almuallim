@@ -24,3 +24,9 @@ Result: all preflight items passed. Local Vite browser workflow passed including
 - Next student reuses selected cards with fresh answers, follows captured section order and stops at the end.
 - Verify real generated spreadsheet/Word fixtures, auto-advance, saved draft, reports, backup and offline Vite output before updating app-0gwwi6.
 - Update the current snapshot files only; retain the existing app ID and URL.
+
+## Staff footer import fix
+- Exclude labeled teacher/principal rows across the selected table; preserve student names and guardian columns.
+- Verify the attached workbook locally imports 28 students, excluding staff and blank template rows. Never publish its contents.
+- Test synthetic Excel and Word footer rows through the browser import workflow.
+- Read current source and QA tests, send only the changed importer and reconciled tests, retain app-0gwwi6, and poll through final QA status.

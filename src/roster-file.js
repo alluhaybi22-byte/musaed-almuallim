@@ -10,6 +10,10 @@ const isName = (value) =>
     key(value),
   );
 const isGuardian = (value) => /ولي|guardian|parent|father/.test(key(value));
+const isStaffMetadata = (value) =>
+  /^(?:اسم\s+(?:المعلم|المعلمة|مدير\s+المدرسة|قائد\s+المدرسة)|معلم\s+المادة|معلمة\s+المادة|المعلم|المعلمة|مدير\s+المدرسة|مديرة\s+المدرسة|قائد\s+المدرسة|قائدة\s+المدرسة|رائد\s+الصف|رائدة\s+الصف|توقيع\s+(?:المعلم|المعلمة|المدير)|teacher(?:\s+name)?|principal(?:\s+name)?)(?:\s*[:：]|\s*$)/i.test(
+    normalizeName(value).replace(/[\u064b-\u065f]/g, ''),
+  );
 export function inferRosterColumns(rows) {
   let header = -1,
     nameColumn = -1,
@@ -49,6 +53,7 @@ export function rosterFromRows(rows, mapping, grade, section) {
   if (!GRADES.includes(Number(grade))) throw Error('الصف غير صالح.');
   return rows
     .slice(mapping.startRow)
+    .filter((row) => !row.some(isStaffMetadata))
     .map((row) => ({
       name: normalizeName(row[mapping.nameColumn]),
       guardian:

@@ -13,6 +13,7 @@ export async function createRosterFixtures() {
       [1, 'ولي ألف', 'طالب ألف'],
       [2, 'ولي باء', 'طالب باء'],
       ['', '', 'عدد الطلاب: ٢'],
+      ['', '', 'معلم المادة : معلم تجريبي', 'مدير المدرسة : مدير تجريبي'],
     ]),
     'الطلاب',
   );
@@ -27,6 +28,7 @@ export async function createRosterFixtures() {
     '<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl>' +
     row(['رقم', 'ولي الأمر', 'اسم الطالب']) +
     row(['١', 'ولي وورد', 'طالب وورد']) +
+    row(['', '', 'معلم المادة : معلم وورد']) +
     '</w:tbl></w:body></w:document>';
   await writeFile(
     'test-results/roster.docx',

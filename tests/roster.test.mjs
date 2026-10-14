@@ -29,6 +29,22 @@ test('headerless names with serial numbers select the text column', () => {
   assert.equal(m.nameColumn, 1);
   assert.equal(rosterFromRows(rows, m, 2, 'ب').length, 2);
 });
+test('staff footer rows are excluded while Arabic and English students remain', () => {
+  const rows = [
+    ['م', 'اسم الطالب'],
+    [1, 'طالب عربي'],
+    [2, 'AABID TEST STUDENT'],
+    [3, ''],
+    ['', 'معلم المادة :   معلم تجريبي', '', 'مدير المدرسة :'],
+    ['اسم المعلم', 'اسم الموظف'],
+    ['مدير المدرسة : مدير تجريبي', 'اسم المدير'],
+    ['', 'teacher name: Test Teacher'],
+  ];
+  assert.deepEqual(
+    rosterFromRows(rows, inferRosterColumns(rows), 2, 'أ').map((s) => s.name),
+    ['طالب عربي', 'AABID TEST STUDENT'],
+  );
+});
 test('next student follows saved roster order and skips archived or other-section records, without wrapping', () => {
   const students = [
     { id: 'a', grade: 1, section: 'أ' },
