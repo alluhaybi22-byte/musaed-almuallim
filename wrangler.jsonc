@@ -1,0 +1,9 @@
+{
+  "name": "musaed-almuallim",
+  "main": "dist/private-worker.mjs",
+  "compatibility_date": "2026-10-14",
+  "workers_dev": true,
+  "preview_urls": false,
+  "build": { "command": "node scripts/build.mjs && node scripts/pack-worker.mjs" },
+  "observability": { "enabled": false }
+}

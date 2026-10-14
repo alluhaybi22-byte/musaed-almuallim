@@ -1,0 +1,17 @@
+{
+  "name": "musaed-almuallim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "المساعد للاختبارات التشخيصية في لغتي للصفوف الأولية",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "build:portable": "node scripts/build-portable.mjs",
+    "test": "node --test tests/domain.test.mjs tests/worker.test.mjs",
+    "test:e2e": "node tests/e2e.mjs",
+    "test:portable": "node tests/portable.mjs"
+  },
+  "engines": { "node": ">=22" },
+  "devDependencies": { "@playwright/test": "1.56.1" }
+}

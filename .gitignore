@@ -1,0 +1,7 @@
+node_modules/
+dist/
+test-results/
+*.local
+.env*
+.wrangler/
+handoff-private/
