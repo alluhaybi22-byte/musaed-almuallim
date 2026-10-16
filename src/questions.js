@@ -1,4 +1,5 @@
 import { splitTasks } from './task-cards.js';
+import { listeningCards } from './listening.js';
 // أمثلة جديدة للمساعد، وليست نصوصًا منسوخة من الكتب. التصحيح يدوي.
 const words = ['كِتَابٌ', 'قَلَمٌ', 'مُعَلِّمٌ', 'مَدْرَسَةٌ', 'صَدِيقٌ'];
 const texts = [
@@ -31,6 +32,10 @@ const unitWords = {
   5: ['غَسَلَ', 'ثَمَر', 'ظِلّ', 'هَدَف', 'لَعِبَ'],
 };
 export function questionsFor(skill) {
+  if (skill.kind === 'listening') {
+    const cards = listeningCards(skill);
+    if (cards) return cards;
+  }
   return splitTasks(skill, baseQuestionsFor) || baseQuestionsFor(skill);
 }
 function baseQuestionsFor(skill) {

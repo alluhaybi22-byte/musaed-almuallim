@@ -31,6 +31,7 @@ for (const name of [
   'domain.js',
   'storage.js',
   'task-cards.js',
+  'listening.js',
   'questions.js',
   'roster-file.js',
 ])

@@ -119,6 +119,13 @@ export function assessmentSignature(result, skillId = '') {
         c.teacherText || '',
         c.expected,
         c.facet || '',
+        ...(c.kind === 'listening'
+          ? [
+              c.audioData || '',
+              result.listeningDelivery?.[c.passageId]?.mode || 'unrecorded',
+              result.listeningDelivery?.[c.passageId]?.count || 0,
+            ]
+          : []),
       ]),
     result.scoring?.mastery ?? 80,
     result.scoring?.medium ?? 50,
