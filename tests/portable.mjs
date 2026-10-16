@@ -16,4 +16,16 @@ try{
  await page.getByRole('button',{name:'حفظ نتيجة الاختبار',exact:true}).click();await page.getByRole('dialog').waitFor();assert.ok((await page.locator('#report').innerText()).includes('١٠٠٪'));
  await page.reload();await page.getByRole('heading',{name:'مساحة معلمك'}).waitFor();assert.equal(await page.locator('.metric strong').nth(0).textContent(),'١');assert.equal(await page.locator('.metric strong').nth(1).textContent(),'١');
  assert.deepEqual(errors,[]);assert.deepEqual(network,[]);console.log('PASS: desktop file opens directly, performs assessment, retains data after reload and makes no network requests.');
+ await page.locator('[data-action="open-grade"][data-grade="1"]').click();
+ await page.getByRole('button',{name:'بدء اختبار',exact:true}).click();
+ await page.getByRole('button',{name:'إلغاء الكل',exact:true}).click();
+ await page.locator('[data-skill$="-listening"]').check();
+ await page.getByRole('button',{name:'بدء الاختبار',exact:true}).click();
+ await page.locator('#listening-audio').waitFor();
+ assert((await page.locator('#listening-audio').getAttribute('src')).startsWith('data:audio/mpeg;base64,'));
+ await page.waitForFunction(()=>Number.isFinite(document.querySelector('#listening-audio')?.duration));
+ const duration=await page.locator('#listening-audio').evaluate(a=>a.duration);
+ assert(duration>5&&duration<90);
+ assert.deepEqual(errors,[]);assert.deepEqual(network,[]);
+ console.log('PASS: portable narration is embedded and decodes without any external requests.');
 }finally{await browser.close();}

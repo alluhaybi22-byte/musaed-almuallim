@@ -70,9 +70,10 @@ try {
     page.locator(`[data-action="${action}"]`).first().click();
   await click('resume');
   await page.locator('.listening-panel').waitFor();
+  await page.locator('#listening-audio').waitFor();
   assert(
-    (await page.locator('.listening-panel').innerText()).includes(
-      'لم يُرفق تسجيل',
+    (await page.locator('#listening-audio').getAttribute('src')).includes(
+      'listening-g2-u2-v1.mp3',
     ),
   );
   await click('listening-read');
@@ -148,6 +149,27 @@ try {
   await page.reload();
   await context.setOffline(true);
   await page.reload();
+  const durations = await page.evaluate(async () => {
+    const { LISTENING_RECORDINGS } =
+      await import('/src/listening-recordings.js');
+    const values = [];
+    for (const record of Object.values(LISTENING_RECORDINGS)) {
+      values.push(
+        await new Promise((resolve, reject) => {
+          const audio = new Audio(record.path);
+          audio.onloadedmetadata = () => resolve(audio.duration);
+          audio.onerror = () =>
+            reject(Error('Offline audio failed: ' + record.path));
+        }),
+      );
+    }
+    return values;
+  });
+  assert.equal(durations.length, 9);
+  assert(
+    durations.every((d) => d > 5 && d < 90),
+    String(durations),
+  );
   await click('resume');
   await page.locator('.listening-panel').waitFor();
   await mkdir('test-results', { recursive: true });

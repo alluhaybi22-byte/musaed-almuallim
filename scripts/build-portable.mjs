@@ -1,5 +1,5 @@
 // نسخة كمبيوتر مستقلة؛ نفس المصدر والمنهج، دون طلب ملفات خارجية.
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..'),
   out = resolve(root, 'dist');
@@ -17,6 +17,16 @@ for (const [name, type] of Object.entries({
     ';base64,' +
     (await readFile(resolve(root, 'public/assets', name))).toString('base64');
 let css = await readFile(resolve(root, 'public/styles.css'), 'utf8');
+for (const name of await readdir(
+  resolve(root, 'public/assets/listening'),
+).catch(() => [])) {
+  if (!name.endsWith('.mp3')) continue;
+  assets['/assets/listening/' + name] =
+    'data:audio/mpeg;base64,' +
+    (await readFile(resolve(root, 'public/assets/listening', name))).toString(
+      'base64',
+    );
+}
 let app = await readFile(resolve(root, 'src/app.js'), 'utf8');
 app = app
   .replace(/^import[\s\S]*?from ['"][^'"]+['"];\s*/gm, '')
@@ -31,6 +41,7 @@ for (const name of [
   'domain.js',
   'storage.js',
   'task-cards.js',
+  'listening-recordings.js',
   'listening.js',
   'questions.js',
   'roster-file.js',

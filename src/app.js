@@ -1053,6 +1053,7 @@ document.addEventListener('click', async (event) => {
         )) {
           card.teacherText = c.teacherText;
           delete card.audioData;
+          delete card.audioPath;
           delete card.audioText;
           delete active.answers[card.id];
         }

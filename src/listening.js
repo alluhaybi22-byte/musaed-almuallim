@@ -1,3 +1,4 @@
+import { LISTENING_RECORDINGS } from './listening-recordings.js';
 // Original practice passages using the unit vocabulary, not official textbook texts.
 // No character is claimed to belong to a textbook. Audio is attached locally by the teacher.
 const passage = (grade, unit, title, text, questions) => ({
@@ -201,6 +202,8 @@ export function listeningCards(skill) {
     templateVersion: 3,
     passageId: p.id,
     passageTitle: p.title,
+    audioPath: LISTENING_RECORDINGS[p.id]?.path || '',
+    audioText: LISTENING_RECORDINGS[p.id]?.text || '',
     facet,
     display: question,
     instruction:
@@ -228,6 +231,7 @@ export function applyListeningEdits(cards, edits) {
     if (textChanges.has(c.passageId)) {
       next.teacherText = textChanges.get(c.passageId);
       delete next.audioData;
+      delete next.audioPath;
       delete next.audioText;
     }
     return next;
@@ -235,10 +239,18 @@ export function applyListeningEdits(cards, edits) {
 }
 
 export function safeListeningAudio(card) {
-  return card.audioText === card.teacherText &&
-    /^data:audio\/(mpeg|mp3|wav|x-wav|ogg|mp4|webm);base64,[A-Za-z0-9+/=]+$/.test(
-      card.audioData || '',
-    )
-    ? card.audioData
+  if (card.audioText !== card.teacherText) return '';
+  if (
+    /^\.\/assets\/listening\/listening-g[123]-u[123]-v1\.mp3$/.test(
+      card.audioPath || '',
+    ) &&
+    !card.audioData
+  )
+    return card.audioPath;
+  const candidate = card.audioData || card.audioPath || '';
+  return /^data:audio\/(mpeg|mp3|wav|x-wav|ogg|mp4|webm);base64,[A-Za-z0-9+/=]+$/.test(
+    candidate,
+  )
+    ? candidate
     : '';
 }

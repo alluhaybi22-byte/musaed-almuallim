@@ -6,6 +6,8 @@ import {
   safeListeningAudio,
 } from '../src/listening.js';
 import { questionsFor } from '../src/questions.js';
+import { LISTENING_RECORDINGS } from '../src/listening-recordings.js';
+import { readFile } from 'node:fs/promises';
 import { assessmentSignature } from '../src/domain.js';
 
 const skill = (grade = 2, unit = 2) => ({
@@ -16,6 +18,25 @@ const skill = (grade = 2, unit = 2) => ({
   unit,
   domain: 'الفهم والاستماع',
   source: { page: 54, edition: '1448' },
+});
+test('all nine narration files are bundled and match their pinned transcripts', async () => {
+  assert.equal(Object.keys(LISTENING_RECORDINGS).length, 9);
+  for (const p of LISTENING_PASSAGES) {
+    const record = LISTENING_RECORDINGS[p.id];
+    assert.equal(record.text, p.text);
+    assert(
+      (
+        await readFile(
+          new URL('../public/' + record.path.slice(2), import.meta.url),
+        )
+      ).length > 1000,
+    );
+    assert(
+      questionsFor(skill(p.grade, p.unit)).every(
+        (c) => safeListeningAudio(c) === record.path,
+      ),
+    );
+  }
 });
 test('nine unit-specific passages produce 27 independent questions and grade progression', () => {
   assert.equal(LISTENING_PASSAGES.length, 9);
@@ -74,6 +95,18 @@ test('audio accepts only local audio data matching the current transcript', () =
   ])
     assert.equal(safeListeningAudio({ ...c, audioData }), '');
   assert.equal(safeListeningAudio({ ...c, teacherText: 'معدل' }), '');
+  const local = {
+    teacherText: 'نص',
+    audioText: 'نص',
+    audioPath: './assets/listening/listening-g1-u1-v1.mp3',
+  };
+  assert.equal(safeListeningAudio(local), local.audioPath);
+  for (const audioPath of [
+    'https://remote/audio.mp3',
+    '../private.mp3',
+    './assets/listening/../../other.mp3',
+  ])
+    assert.equal(safeListeningAudio({ ...local, audioPath }), '');
 });
 test('progress separates recordings and delivery counts; untouched other-unit bank remains compatible', () => {
   const cards = questionsFor(skill());

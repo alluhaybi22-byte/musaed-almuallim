@@ -1,6 +1,6 @@
 {
   "name": "musaed-almuallim",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "المساعد للاختبارات التشخيصية في لغتي للصفوف الأولية",
@@ -8,7 +8,7 @@
     "dev": "node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
     "build:portable": "node scripts/build-portable.mjs",
-    "test": "node --test tests/domain.test.mjs tests/worker.test.mjs tests/roster.test.mjs tests/review.test.mjs tests/listening.test.mjs",
+    "test": "node --test tests/domain.test.mjs tests/worker.test.mjs tests/roster.test.mjs tests/review.test.mjs tests/listening.test.mjs tests/listening-worker.test.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:portable": "node tests/portable.mjs",
     "test:review": "node tests/review-e2e.mjs",
