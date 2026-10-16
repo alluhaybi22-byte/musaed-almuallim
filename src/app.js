@@ -24,6 +24,7 @@ import {
 } from './domain.js';
 import { readState, writeState } from './storage.js';
 import { questionsFor } from './questions.js';
+import { applyListeningEdits, safeListeningAudio } from './listening.js';
 import {
   readRosterFile,
   inferRosterColumns,
@@ -246,9 +247,13 @@ function chosenCards() {
   const cards = availableSkills()
     .filter((s) => selected.has(s.id))
     .flatMap(questionsFor);
-  return cards.map((c) =>
-    customCards?.[c.id] ? { ...c, ...customCards[c.id] } : c,
-  );
+  return applyListeningEdits(cards, customCards || {});
+}
+function listeningPanel(c) {
+  if (c.kind !== 'listening') return '';
+  const src = safeListeningAudio(c);
+  const count = active.listeningDelivery?.[c.passageId]?.count || 0;
+  return `<section class="panel listening-panel"><h2>استمع ثم أجب · ${e(c.passageTitle)}</h2><p class="muted">${e(c.provenance)}</p><p>استمع الطالب إلى المقطع كاملًا: <strong>${ar(count)}</strong> مرة. وحّد عدد مرات الاستماع بين الطلاب؛ المقترح مرتان قبل الأسئلة.</p>${src ? `<audio id="listening-audio" controls preload="metadata" src="${e(src)}" aria-label="مقطع الاستماع"></audio>` : '<div class="notice warning">لم يُرفق تسجيل لهذا المقطع بعد. اقرأ النص من دليل المعلم، أو أرفق ملفًا صوتيًا مطابقًا له. لا يوجد توليد صوت أو رفع بيانات من التطبيق.</div>'}<div class="row">${btn('تسجيل قراءة كاملة بصوت المعلم', 'listening-read', 'secondary small')}${btn('إرفاق صوت مطابق للنص', 'listening-attach', 'secondary small')}</div><input id="listening-file" type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/webm" hidden><small>الملف محلي ويحفظ مع الاختبار والنسخة الاحتياطية؛ حتى ٢ ميجابايت. تأكد من مطابقته للنص قبل إرفاقه. تعديل النص يلغي الصوت وأحكام أسئلته.</small></section>`;
 }
 function assessment() {
   const student = state.students.find((s) => s.id === active.studentId);
@@ -260,6 +265,8 @@ function assessment() {
   const c = active.cards[cardIndex],
     answer = active.answers[c.id],
     pct = Math.round((100 * (cardIndex + 1)) / active.cards.length);
+  if (studentDisplay && c.kind === 'listening')
+    return `<section class="student-display"><div class="row between"><small>مهارة الاستماع</small>${btn('العودة للمعلم', 'student-display', 'secondary small')}</div><div class="prompt-card"><div class="stimulus">استمع جيدًا، ثم أجب شفهيًا.</div><p>يقرأ المعلم المقطع أو يشغله من شاشة المعلم.</p></div></section>`;
   if (studentDisplay)
     return `<section class="student-display"><div class="row between"><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small>${btn('العودة للمعلم', 'student-display', 'secondary small')}</div><div class="prompt-card"><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div></section>`;
   return `<section class="assessment-body"><div class="assessment-head"><div><h1>${e(student?.name || 'الطالب')}</h1><p>${GRADE_NAMES[active.grade]} · الفصل ${ar(active.semester)} · ${e(c.domain)}</p></div><div class="row">${btn('عرض الطالب', 'student-display', 'secondary small')}${btn('حفظ واستكمال لاحقًا', 'pause', 'secondary small')}</div></div><div class="row between"><span class="badge blue">${e(c.skillTitle)}${c.facet ? ' · ' + e(c.facet) : ''}</span><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small></div><div class="progress"><i style="width:${pct}%"></i></div><div class="prompt-card"><small>المهمة</small><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div><div class="grading">${['independent', 'incorrect'].map((k) => `<button class="score-btn ${answer?.score === k ? 'selected' : ''}" data-action="score" data-score="${k}" aria-pressed="${answer?.score === k}">${SCORES[k]}</button>`).join('')}</div><details class="assessment-options"><summary>خيارات التقييم والملاحظات</summary><div class="row between"><div class="row">${['assisted', 'not_assessed', 'not_taught'].map((k) => btn(SCORES[k], 'score', 'ghost small', 'data-score="' + k + '" aria-pressed="' + (answer?.score === k) + '"')).join('')}</div><div class="font-controls"><label for="font-size">حجم العرض</label><input id="font-size" type="range" min="36" max="120" value="${state.settings.fontSize}"></div></div><details class="teacher-hint"><summary>دليل المعلم والإجابة المتوقعة</summary>${c.teacherText ? `<p class="teacher-text">${e(c.teacherText)}</p>` : ''}<p>${e(c.expected)}</p><small>طبعة ${e(c.source.edition)} · دليل الوحدة ص ${ar(c.source.page)} · العينة من إعداد المساعد</small>${btn('تعديل هذه البطاقة', 'edit-active-card', 'ghost small')}</details><label class="assessment-note">ملاحظة على هذه البطاقة<textarea id="answer-note" placeholder="اختياري">${e(answer?.note || '')}</textarea></label></details><div class="assessment-tools">${btn(icon('back') + ' السابقة', 'previous', 'secondary', cardIndex === 0 ? 'disabled' : '')}${btn('مراجعة الاختبار', 'review', 'ghost')}${btn(cardIndex === active.cards.length - 1 ? 'مراجعة وحفظ' : 'التالية ' + icon('arrow'), 'next')}</div></section>`;
@@ -336,7 +343,80 @@ function render() {
               ? resultsView()
               : settingsView(),
   );
+  if (route === 'assessment' && active && !review) {
+    const c = active.cards[cardIndex];
+    app
+      .querySelector('.assessment-body')
+      ?.classList.toggle('listening-assessment', c.kind === 'listening');
+    app
+      .querySelector('.grading')
+      ?.insertAdjacentHTML('beforebegin', listeningPanel(c));
+    app
+      .querySelector('#listening-audio')
+      ?.addEventListener('ended', async () => {
+        try {
+          await recordListeningDelivery(c, 'recording');
+        } catch (error) {
+          toast(error.message);
+        }
+      });
+    app.querySelector('#listening-audio')?.addEventListener('error', () => {
+      toast(
+        'تعذر تشغيل الملف. جرّب MP3 أو اقرأ النص بصوتك؛ لم تُسجّل قراءة مكتملة.',
+      );
+    });
+  }
 }
+async function recordListeningDelivery(c, mode) {
+  if (!active || !active.cards.includes(c)) return;
+  await saveCurrentNote();
+  active.listeningDelivery ||= {};
+  const old = active.listeningDelivery[c.passageId];
+  active.listeningDelivery[c.passageId] = {
+    count: (old?.count || 0) + 1,
+    mode: old?.mode && old.mode !== mode ? 'mixed' : mode,
+    updatedAt: new Date().toISOString(),
+  };
+  await saveDraft();
+  render();
+}
+
+document.addEventListener('change', async (event) => {
+  if (event.target.id !== 'listening-file') return;
+  const file = event.target.files?.[0];
+  const draft = active,
+    c = draft?.cards[cardIndex];
+  if (!file || c?.kind !== 'listening' || busy) return;
+  try {
+    if (file.size > 2 * 1024 * 1024 || !file.size)
+      throw Error('اختر ملفًا صوتيًا غير فارغ لا يتجاوز ٢ ميجابايت.');
+    const text = c.teacherText;
+    const audioData = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(Error('تعذرت قراءة الصوت.'));
+      reader.readAsDataURL(file);
+    });
+    if (!safeListeningAudio({ teacherText: text, audioText: text, audioData }))
+      throw Error(
+        'صيغة الصوت غير مدعومة. استخدم MP3 أو WAV أو OGG أو M4A أو WebM.',
+      );
+    if (active !== draft || c.teacherText !== text) return;
+    for (const card of active.cards.filter(
+      (x) => x.passageId === c.passageId,
+    )) {
+      card.audioData = audioData;
+      card.audioText = text;
+      delete active.answers[card.id];
+    }
+    if (active.listeningDelivery) delete active.listeningDelivery[c.passageId];
+    await saveDraft();
+    render();
+    toast('أُرفق الصوت محليًا؛ أُعيدت أحكام المقطع لتقييمه بالصوت الجديد.');
+  } catch (error) {
+    toast(error.message);
+  }
+});
 let dialogReturnFocus;
 function modal(title, body, { wide = false, actions = '' } = {}) {
   dialogReturnFocus = document.activeElement;
@@ -786,6 +866,11 @@ document.addEventListener('click', async (event) => {
       await saveDraft();
       route = 'assessment';
       render();
+    } else if (a === 'listening-attach') {
+      document.querySelector('#listening-file')?.click();
+    } else if (a === 'listening-read') {
+      const c = active?.cards[cardIndex];
+      if (c?.kind === 'listening') await recordListeningDelivery(c, 'teacher');
     } else if (a === 'score') {
       if (!active || review) return;
       const c = active.cards[cardIndex];
@@ -956,16 +1041,34 @@ document.addEventListener('click', async (event) => {
         !document.querySelector('#edit-teacher').value.trim()
       )
         throw Error('اكتب النص المسموع أو الإملائي.');
+      const previousText = c.teacherText;
       c.display = display;
       c.instruction = document.querySelector('#edit-instruction').value;
       c.expected = document.querySelector('#edit-expected').value;
       if (c.teacherText)
         c.teacherText = document.querySelector('#edit-teacher').value.trim();
+      if (c.passageId && c.teacherText !== previousText) {
+        for (const card of active.cards.filter(
+          (x) => x.passageId === c.passageId,
+        )) {
+          card.teacherText = c.teacherText;
+          delete card.audioData;
+          delete card.audioPath;
+          delete card.audioText;
+          delete active.answers[card.id];
+        }
+        if (active.listeningDelivery)
+          delete active.listeningDelivery[c.passageId];
+      }
       delete active.answers[c.id];
       await saveDraft();
       closeModal();
       render();
-      toast('عُدلت البطاقة، وأعيد حكمها ليقيّمها المعلم من جديد.');
+      toast(
+        c.passageId
+          ? 'حُفظ التعديل. عند تغيير المقطع راجع إجابات جميع أسئلته؛ أُلغي صوته وأحكامه السابقة.'
+          : 'عُدلت البطاقة، وأعيد حكمها ليقيّمها المعلم من جديد.',
+      );
     } else if (a === 'update') {
       if (active) {
         if (!review) await saveCurrentNote();

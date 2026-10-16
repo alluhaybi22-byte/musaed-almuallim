@@ -104,7 +104,11 @@
       "ready skill selections",
       "compound outcome split into reading and dictation",
       "hidden dictation stimulus",
-      "independent branch mastery percentages"
+      "independent branch mastery percentages",
+      "bundled offline listening narration",
+      "listening question privacy",
+      "shared passage edit invalidates old audio and judgements",
+      "complete playback count"
     ],
     "description": "Exercise second-semester assessments and teacher-controlled sample editing on mobile.",
     "steps": [
@@ -115,9 +119,11 @@
       "Verify the header identifies grade 3 and semester 2, use font enlargement controls and save for later. Reload and verify both drafts remain.",
       "Choose الفهم والاستماع in grade 2 setup, review the samples and edit the first listening teacher text and its expected answer together. Start and open خيارات التقييم والملاحظات then دليل المعلم والإجابة المتوقعة. The edited text is visible to the teacher; عرض الطالب hides it. Editing the active card offers the teacher text field and saving clears an earlier judgement.",
       "For the solar/lunar skill verify ten classification cards, five lunar then five solar. Grade the five lunar correct and three solar incorrect, save and check the report shows lunar 100%, solar 40%, with the three failed words listed. The task asks classification alone.",
-      "For grade 2, semester 1, unit 3, clear selection and choose يقرأ ويكتب التنوين alone. Its ten cards contain five read-only cards and five write-only cards. Mark reading cards correct and writing cards incorrect; عرض الطالب must never show the dictated word. Save and verify independent reading 100% and dictation 0%, with five failed writing cards and their criteria."
+      "For grade 2, semester 1, unit 3, clear selection and choose يقرأ ويكتب التنوين alone. Its ten cards contain five read-only cards and five write-only cards. Mark reading cards correct and writing cards incorrect; عرض الطالب must never show the dictated word. Save and verify independent reading 100% and dictation 0%, with five failed writing cards and their criteria.",
+      "Save any active assessment for later. Start a new grade 2 test in semester 1 unit 2. Clear selection and choose only فهم نص مسموع. Start and verify three oral-question cards for مساعدة الجار, with a working audio player and no missing-recording warning. Play the complete recording and verify the completed-listening count becomes one.",
+      "Use عرض الطالب. The passage, question text and answers must be absent; only the listening instruction appears. Return to the teacher. Grade a question, then edit the shared teacher passage through the teacher guide. Verify the old audio is removed, all three question judgements are cleared, and the missing-recording notice appears. Save for later and reload; the edited passage remains."
     ],
-    "expected": "Both second-semester routes run on mobile; edited cards show the teacher text, active-card editing clears its judgement, and both drafts persist."
+    "expected": "Both second-semester routes run on mobile; edited cards show the teacher text, active-card editing clears its judgement, and both drafts persist. For first-semester unit 2, bundled listening audio plays, completed listening is counted, the student sees no questions or answers, and editing the shared passage invalidates its old audio and judgements."
   },
   {
     "name": "School settings, class report and offline persistence",

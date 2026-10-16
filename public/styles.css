@@ -36,6 +36,11 @@ svg{width:24px;height:24px;flex:none}
   .report-sheet { overflow-x: auto; }
   .last-test { max-width: 220px; }
 }
+.listening-assessment .stimulus { font-size: clamp(24px, 5vw, 34px); line-height: 1.9; }
+.listening-assessment .prompt-card { min-height: 0; }
+.listening-panel { margin: 18px 0; }
+.listening-panel audio { display: block; width: 100%; margin: 14px 0; }
+.listening-panel .row { margin: 14px 0; }
 @media print {
   .report-scope { display: none !important; }
   .report-sheet { overflow: visible !important; }

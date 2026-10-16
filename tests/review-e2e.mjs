@@ -242,7 +242,7 @@ try {
     true,
   );
   await click('مراجعة عينات الاختبار');
-  assert.equal(await page.locator('[data-card-teacher]').count(), 5);
+  assert.equal(await page.locator('[data-card-teacher]').count(), 3);
   await page
     .locator('[data-card-teacher]')
     .first()
