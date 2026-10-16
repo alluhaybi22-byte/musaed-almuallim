@@ -54,15 +54,15 @@ await write(
 let html = await readFile(resolve(root, 'public/index.html'), 'utf8');
 html = html
   .replaceAll('href="/', 'href="./')
+  .replace('href="./manifest.webmanifest"', 'href="/manifest.webmanifest"')
   .replace('./styles.css', './src/styles.css')
   .replace('/src/app.js', './src/main.ts');
 await write('index.html', html, 'html');
 const manifest = JSON.parse(
   await readFile(resolve(root, 'public/manifest.webmanifest'), 'utf8'),
 );
-manifest.start_url = './';
-manifest.scope = './';
-for (const item of manifest.icons) item.src = item.src.replace(/^\//, './');
+manifest.start_url = '/';
+manifest.scope = '/';
 await write('public/manifest.webmanifest', JSON.stringify(manifest), 'json');
 await write(
   'public/curriculum.json',
@@ -101,7 +101,7 @@ import { resolve, relative } from 'node:path';
 import { createHash } from 'node:crypto';
 let outputDirectory;
 export default defineConfig({
- base: './',
+ base: '/',
  build: {target: 'es2022', outDir: process.env.APPDEPLOY_VITE_OUT_DIR || 'dist', sourcemap: process.env.APPDEPLOY_VITE_SOURCEMAP === 'hidden' ? 'hidden' : false, rollupOptions:{maxParallelFileOps:128}},
  plugins: [{name: 'al-musaed-offline', configResolved(config){outputDirectory=resolve(config.root,config.build.outDir);}, async closeBundle(){
   const out = outputDirectory;
