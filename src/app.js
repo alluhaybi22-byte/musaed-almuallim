@@ -112,12 +112,14 @@ function badge(label, percent = null, limited = false) {
   return `<span class="badge ${c}">${e(label)}${percent !== null ? ' · ' + ar(percent) + '٪' : ''}</span>${limited ? '<small> عينة محدودة</small>' : ''}`;
 }
 function students() {
+  const normalizedQuery = normalizeName(query);
   return state.students.filter(
     (s) =>
       s.grade === grade &&
       !s.archived &&
       (!section || s.section === section) &&
-      (!query || s.name.includes(query)),
+      (!normalizedQuery ||
+        normalizeName(s.name).includes(normalizedQuery)),
   );
 }
 async function persist(next) {
@@ -801,6 +803,10 @@ document.addEventListener('click', async (event) => {
       customCards = customCards || {};
       for (const area of dialogs.querySelectorAll('[data-card-edit]')) {
         if (!area.value.trim()) throw Error('لا تترك بطاقة فارغة.');
+        const instruction = dialogs
+          .querySelector(`[data-card-instruction="${CSS.escape(area.dataset.cardEdit)}"]`)
+          .value.trim();
+        if (!instruction.trim()) throw Error('اكتب المهمة لكل بطاقة.');
         if (
           !dialogs
             .querySelector(
@@ -824,9 +830,7 @@ document.addEventListener('click', async (event) => {
               .querySelector(`[data-card-teacher="${CSS.escape(id)}"]`)
               ?.value.trim() || '',
           display: area.value.trim(),
-          instruction: dialogs
-            .querySelector(`[data-card-instruction="${CSS.escape(id)}"]`)
-            .value.trim(),
+          instruction,
         };
       }
       closeModal();
@@ -916,7 +920,9 @@ document.addEventListener('click', async (event) => {
       nav('home');
       toast('حُفظ الاختبار لاستكماله لاحقًا.');
     } else if (a === 'resume') {
-      active = structuredClone(state.drafts.find((d) => d.id === t.dataset.id));
+      const draft = state.drafts.find((d) => d.id === t.dataset.id);
+      if (!draft) throw Error('المسودة غير موجودة أو حُذفت.');
+      active = structuredClone(draft);
       grade = active.grade;
       studentDisplay = false;
       cardIndex = Math.max(
@@ -989,7 +995,9 @@ document.addEventListener('click', async (event) => {
     } else if (a === 'refresh-report') {
       const fresh = await readState();
       state = fresh;
-      dialogs.querySelector('#report').outerHTML = classReportHTML();
+      const report = dialogs.querySelector('#report');
+      if (!report) throw Error('تعذر تحديث التقرير. أعد فتح نافذة التقرير.');
+      report.outerHTML = classReportHTML();
       toast('حُدّث التقرير في النافذة نفسها.');
     } else if (a === 'print') window.print();
     else if (a === 'export-csv') exportCSV(t.dataset.kind, t.dataset.id);
@@ -1033,7 +1041,9 @@ document.addEventListener('click', async (event) => {
     } else if (a === 'save-active-card') {
       const c = active.cards[cardIndex],
         display = document.querySelector('#edit-display').value.trim();
+      const instruction = document.querySelector('#edit-instruction').value.trim();
       if (!display) throw Error('لا تترك البطاقة فارغة.');
+      if (!instruction) throw Error('اكتب المهمة.');
       if (!document.querySelector('#edit-expected').value.trim())
         throw Error('اكتب الإجابة المتوقعة ومعيار الحكم.');
       if (
@@ -1043,7 +1053,7 @@ document.addEventListener('click', async (event) => {
         throw Error('اكتب النص المسموع أو الإملائي.');
       const previousText = c.teacherText;
       c.display = display;
-      c.instruction = document.querySelector('#edit-instruction').value;
+      c.instruction = instruction;
       c.expected = document.querySelector('#edit-expected').value;
       if (c.teacherText)
         c.teacherText = document.querySelector('#edit-teacher').value.trim();
@@ -1086,8 +1096,11 @@ async function saveCurrentNote() {
   const c = active.cards[cardIndex],
     a = active.answers[c.id];
   if (a) {
-    a.note = document.querySelector('#answer-note')?.value || a.note || '';
-    await saveDraft();
+    const nextNote = document.querySelector('#answer-note')?.value || '';
+    if (nextNote !== (a.note || '')) {
+      a.note = nextNote;
+      await saveDraft();
+    }
   }
 }
 let pendingBackup;
@@ -1190,7 +1203,9 @@ document.addEventListener('change', async (ev) => {
       ].includes(t.id)
     ) {
       reportScope[t.id.slice(7)] = t.value;
-      dialogs.querySelector('#report').outerHTML = classReportHTML();
+      const report = dialogs.querySelector('#report');
+      if (!report) throw Error('تعذر تحديث التقرير. أعد فتح نافذة التقرير.');
+      report.outerHTML = classReportHTML();
     } else if (
       [
         'result-semester',
