@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#122d49">
+  <title>تبيان | مساعد التحضير</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="platform.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+<div id="app">
+  <header class="topbar no-print">
+    <div class="brand-mark" aria-hidden="true">ت</div>
+    <div class="brand-copy">
+      <div class="eyebrow">أدوات المعلم</div>
+      <h1>تبيان <span>مساعد التحضير</span></h1>
+    </div>
+    <button id="openFull" type="button" class="icon-button" title="فتح في تبويب واسع" aria-label="فتح في تبويب واسع">↗</button>
+  </header>
+
+  <main class="shell no-print">
+    <nav class="tabs" aria-label="أقسام البرنامج">
+      <button type="button" class="tab active" data-tab="home" aria-selected="true">الرئيسية</button>
+      <button type="button" class="tab" data-tab="editor" aria-selected="false">إعداد درس</button>
+      <button type="button" class="tab" data-tab="library" aria-selected="false">تحاضيري</button>
+      <button type="button" class="tab" data-tab="weekly" aria-selected="false">الأسبوع</button>
+      <button type="button" class="tab" data-tab="settings" aria-selected="false">الإعدادات</button>
+    </nav>
+
+    <section id="home" class="panel active" aria-labelledby="home-heading">
+      <div class="hero">
+        <div class="hero-label">تحضير منظم • وقت أكثر للتعليم</div>
+        <h2 id="home-heading">كل تحاضيرك في مكان واحد</h2>
+        <p>أنشئ التحضير، أعد استخدامه للشعب الأخرى، وراجع خطة الأسبوع قبل حصة الغد.</p>
+        <div class="hero-actions">
+          <button type="button" class="btn btn-light" data-goto="editor">+ تحضير جديد</button>
+          <button type="button" class="btn btn-outline-light" data-goto="weekly">عرض الأسبوع</button>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><span>التحاضير المحفوظة</span><strong id="totalCount">0</strong></div>
+        <div class="stat"><span>حصص هذا الأسبوع</span><strong id="weekCount">0</strong></div>
+        <div class="stat"><span>قوالب جاهزة</span><strong id="templatesCount">4</strong></div>
+      </div>
+      <div class="section-heading"><h3>ابدأ بقالب مناسب</h3><span>يمكن تعديل كل عنصر قبل حفظه</span></div>
+      <div class="template-grid" id="templateCards"></div>
+      <div class="info-banner"><span aria-hidden="true">🔒</span> يُحفظ العمل داخل متصفحك. لا يطلب البرنامج بيانات الدخول إلى «مدرستي» ولا يرسل التحاضير إلى خادم.</div>
+    </section>
+
+    <section id="editor" class="panel" aria-labelledby="editor-heading">
+      <div class="section-heading"><h2 id="editor-heading">تحضير درس جديد</h2><button type="button" class="btn btn-secondary btn-small" id="resetForm">تفريغ النموذج</button></div>
+      <div class="editor-note">يمكنك حفظ أكثر من تحضير، وتكرار التحضير نفسه لشعبة أخرى، ونسخ محتواه أو تعبئة حقول مدرستي من زر تبيان داخل المنصة بعد تثبيت الإضافة.</div>
+      <form id="lessonForm" autocomplete="off">
+        <input id="editId" type="hidden">
+        <div class="subhead">معلومات الحصة</div>
+        <div class="form-grid">
+          <label>عنوان الدرس <span class="required">*</span><input id="title" type="text" required maxlength="160" placeholder="مثال: الصديقان"></label>
+          <label>المادة<input id="subject" type="text" maxlength="80" value="لغتي الجميلة"></label>
+          <label>الصف<input id="grade" type="text" maxlength="80" value="الثاني الابتدائي"></label>
+          <label>الشعبة<input id="className" type="text" maxlength="50" placeholder="مثال: ثاني / أ"></label>
+          <label>تاريخ الحصة <span class="required">*</span><input id="date" type="date" required></label>
+          <label>رقم الحصة<input id="period" type="number" min="1" max="10" value="1"></label>
+        </div>
+        <div class="template-bar">
+          <label for="templatePicker">تعبئة من قالب</label>
+          <select id="templatePicker">
+            <option value="">اختر قالبًا</option>
+            <option value="reading">القراءة والفهم</option>
+            <option value="phonics">الظواهر اللغوية</option>
+            <option value="spelling">الإملاء والخط</option>
+            <option value="expression">التعبير والتحدث</option>
+          </select>
+          <button type="button" class="btn btn-secondary btn-small" id="applyTemplate">تطبيق القالب</button>
+        </div>
+        <div class="subhead">عناصر التحضير</div>
+        <div class="form-stack">
+          <label>نواتج التعلم / الأهداف<textarea id="objectives" rows="3" maxlength="2500" placeholder="ما المهارات المتوقع أن يتقنها الطلاب؟"></textarea></label>
+          <label>التهيئة والتمهيد<textarea id="warmup" rows="2" maxlength="2500"></textarea></label>
+          <label>الأنشطة وخطوات الدرس<textarea id="activities" rows="4" maxlength="2500"></textarea></label>
+          <label>استراتيجيات التدريس<textarea id="strategies" rows="2" maxlength="2500"></textarea></label>
+          <label>التحقق من التعلم / التقويم<textarea id="assessment" rows="3" maxlength="2500"></textarea></label>
+          <label>الواجب المنزلي<textarea id="homework" rows="2" maxlength="2500"></textarea></label>
+          <label>الإثراء / مراعاة الفروق الفردية<textarea id="enrichment" rows="2" maxlength="2500"></textarea></label>
+          <label>رابط مورد تعليمي (عين أو فيديو)<input id="resourceLink" type="url" maxlength="500" placeholder="https://..."></label>
+        </div>
+        <div class="sticky-actions">
+          <button class="btn btn-primary" type="submit">حفظ التحضير</button>
+          <button class="btn btn-secondary" type="button" id="copyDraft">نسخ محتوى النموذج</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="library" class="panel" aria-labelledby="library-heading">
+      <div class="section-heading"><h2 id="library-heading">مكتبة تحاضيري</h2><button type="button" class="btn btn-primary btn-small" data-goto="editor">+ تحضير</button></div>
+      <label class="search-label">البحث في التحاضير<input id="searchLessons" type="search" placeholder="ابحث باسم الدرس أو المادة أو الشعبة..."></label>
+      <div id="lessonList" class="lesson-list"></div>
+    </section>
+
+    <section id="weekly" class="panel" aria-labelledby="weekly-heading">
+      <div class="section-heading"><h2 id="weekly-heading">الجدول الأسبوعي</h2><span class="tiny">من الأحد إلى الخميس</span></div>
+      <div class="week-controls">
+        <button type="button" id="prevWeek" class="btn btn-secondary btn-small" aria-label="الأسبوع السابق">السابق →</button>
+        <div id="weekRange" class="week-range"></div>
+        <button type="button" id="nextWeek" class="btn btn-secondary btn-small" aria-label="الأسبوع التالي">← التالي</button>
+      </div>
+      <div id="weekDays" class="week-days"></div>
+      <div class="week-footer"><button type="button" class="btn btn-secondary btn-small" id="goThisWeek">الأسبوع الحالي</button></div>
+    </section>
+
+    <section id="settings" class="panel" aria-labelledby="settings-heading">
+      <div class="section-heading"><h2 id="settings-heading">الإعدادات والنسخ الاحتياطي</h2></div>
+      <div class="settings-card">
+        <h3>بيانات المعلم</h3>
+        <p class="muted">تُستخدم عند طباعة التحضير ولا تُرسل إلى أي جهة.</p>
+        <form id="profileForm" class="form-stack">
+          <label>اسم المعلم<input id="teacherName" maxlength="140" placeholder="اسم المعلم"></label>
+          <label>المدرسة<input id="schoolName" maxlength="140" placeholder="اسم المدرسة"></label>
+          <button type="submit" class="btn btn-primary">حفظ البيانات</button>
+        </form>
+      </div>
+      <div class="settings-card">
+        <h3>نسخة احتياطية من تحاضيرك</h3>
+        <p class="muted">نزّل ملف JSON للاحتفاظ به، ويمكنك دمجه لاحقًا دون حذف التحاضير الحالية.</p>
+        <label class="check-label"><input type="checkbox" id="importProfile"> استعادة بيانات المعلم والمدرسة عند الاستيراد</label>
+        <div class="button-row">
+          <button type="button" class="btn btn-secondary" id="exportBackup">تصدير نسخة احتياطية</button>
+          <label class="btn btn-secondary import-button">استيراد ودمج<input id="importBackup" type="file" accept=".json,application/json" hidden></label>
+        </div>
+      </div>
+      <div class="settings-card">
+        <h3>منصة مدرستي</h3>
+        <p class="muted">بعد تثبيت الإضافة ومنحها إذن مدرستي: افتح صفحة إعداد الدرس واضغط زر «تبيان» في أسفل الصفحة، ثم اختر التحضير واربط الحقول وراجع المعاينة. الحفظ النهائي يتم من زر مدرستي نفسه. الربط تجريبي ويحتاج تحققًا على حسابك.</p>
+        <a href="https://schools.madrasati.sa/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">فتح منصة مدرستي ↗</a>
+      </div>
+      <div class="small-note">نسخة تجريبية 0.2.0 — تطوير مستقل مستلهم من احتياجات التحضير وليس نسخة من الشيفرة الخاصة بإضافة «تحضيري».</div>
+    </section>
+  </main>
+  <footer class="foot no-print">تبيان • مساعد التحضير <span>نسخة تجريبية محلية</span></footer>
+</div>
+<dialog id="scheduleDialog" dir="rtl" aria-labelledby="scheduleTitle">
+  <form id="scheduleForm">
+    <div class="section-heading"><h2 id="scheduleTitle">توزيع التحضير</h2><button type="button" id="closeSchedule" class="btn btn-secondary">إغلاق</button></div>
+    <p>أضف شعبًا ومواعيد جديدة. تُحفظ نسخ محلية قابلة للتعديل، وتظهر في جدول الأسبوع.</p>
+    <input type="hidden" id="scheduleLessonId">
+    <div id="scheduleRows"></div>
+    <div class="button-row"><button type="button" id="addScheduleRow" class="btn btn-secondary">+ حصة أخرى</button><button type="submit" class="btn btn-primary">اعتماد التوزيع</button></div>
+  </form>
+</dialog>
+<section id="printSheet" aria-hidden="true"></section>
+<div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "تبيان | مساعد التحضير",
+  "short_name": "تبيان تحضير",
+  "description": "إعداد التحاضير وحفظها وتوزيعها للشعب، مع معاينة تعبئة حقول مدرستي محليًا.",
+  "version": "0.2.0",
+  "action": {"default_title": "تبيان | مساعد التحضير", "default_popup": "index.html"},
+  "permissions": ["storage"],
+  "content_scripts": [{
+    "matches": ["https://schools.madrasati.sa/*"],
+    "js": ["platform.js", "content.js"],
+    "run_at": "document_idle"
+  }],
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'none'"}
+}
