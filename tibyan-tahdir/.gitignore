@@ -1,0 +1,7 @@
+node_modules/
+SafariProject/
+test-results/
+*.ipa
+*.xcarchive
+*.mobileprovision
+.DS_Store

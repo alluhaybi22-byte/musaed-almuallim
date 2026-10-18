@@ -1,0 +1,12 @@
+{
+  "name": "tibyan-tahdir",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Independent Arabic lesson planning and Safari Web Extension source",
+  "scripts": {
+    "check": "node --check extension/app.js && node --check extension/content.js && node --check extension/platform.js",
+    "test": "node --test tests/core.cjs && node tests/integration.cjs",
+    "test:core": "node --test tests/core.cjs"
+  },
+  "devDependencies": {"playwright": "1.62.1"}
+}
