@@ -41,9 +41,15 @@ svg{width:24px;height:24px;flex:none}
 .listening-panel { margin: 18px 0; }
 .listening-panel audio { display: block; width: 100%; margin: 14px 0; }
 .listening-panel .row { margin: 14px 0; }
+.drive-backups { list-style: none; padding: 0; }
+.drive-backups li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; }
+.drive-backups span { overflow-wrap: anywhere; flex: 1 1 200px; }
+#drive-panel p { margin: 12px 0; }
+#drive-panel small { display: block; margin-top: 12px; }
 @media print {
   .report-scope { display: none !important; }
   .report-sheet { overflow: visible !important; }
   .report-sheet tr { break-inside: avoid; }
   .report-sheet h3 { break-after: avoid; }
 }
+

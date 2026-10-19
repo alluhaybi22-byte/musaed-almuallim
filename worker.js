@@ -1,7 +1,8 @@
 // PREVIEW_PASSWORD يُحفظ في Cloudflare Secrets وحدها، ولا يدخل ملفات التطبيق.
 const securityHeaders={
  'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow',
- 'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+ 'Content-Security-Policy':"default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data:; font-src 'self'; connect-src 'self' https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+ 'Cross-Origin-Opener-Policy':'same-origin-allow-popups',
  'Permissions-Policy':'camera=(), microphone=(), geolocation=()'
 };
 export async function authorized(request,password){
@@ -25,3 +26,4 @@ export default {
   return assetResponse(request,globalThis.__MUSAED_ASSETS__||{});
  }
 };
+

@@ -22,6 +22,8 @@ const write = async (path, source, parser) =>
   );
 for (const name of [
   'domain.js',
+  'drive-config.js',
+  'drive-storage.js',
   'storage.js',
   'questions.js',
   'task-cards.js',
@@ -119,3 +121,4 @@ export default defineConfig({
   'typescript',
 );
 console.log('AppDeploy staging ready with five QA workflows; no student data.');
+

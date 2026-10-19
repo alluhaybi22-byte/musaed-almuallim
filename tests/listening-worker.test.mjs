@@ -7,6 +7,8 @@ test('private media policy permits local and embedded narration but not remote p
   });
   const csp = response.headers.get('Content-Security-Policy');
   assert(csp.includes("media-src 'self' data:;"));
-  assert(csp.includes("script-src 'self';"));
+  assert.equal(csp.match(/(?:^|; )script-src ([^;]+)/)[1], "'self' https://accounts.google.com/gsi/client");
+  assert(!csp.includes("'unsafe-eval'"));
   assert(csp.includes("frame-ancestors 'none'"));
 });
+
