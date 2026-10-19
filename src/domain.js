@@ -1,4 +1,4 @@
-export const VERSION = '0.4.0';
+export const VERSION = '0.5.0';
 export const GRADES = [1, 2, 3];
 export const GRADE_NAMES = {
   1: 'الأول الابتدائي',
@@ -463,4 +463,33 @@ export function nextRosterStudent(students, result) {
     if (candidate) return candidate;
   }
   return null;
+}
+
+
+// Suggestions reflect observed items, not a diagnosis or automatic grading.
+export function trainingPlan(result) {
+  const groups = new Map();
+  for (const c of result.cards) {
+    if (!['incorrect', 'assisted'].includes(result.answers[c.id]?.score)) continue;
+    const key = c.skillId + ':' + (c.facet || '');
+    if (groups.has(key)) continue;
+    const label = c.facet || c.skillTitle;
+    let activity = 'قدّم نموذجًا واحدًا للمهمة، ثم تدريبًا موجهًا، ثم محاولات مستقلة مع تغذية راجعة.';
+    if (c.kind === 'listening') {
+      activity = /تسلسل/.test(label) ? 'استمع إلى قصة قصيرة، ثم رتّب ثلاثة أحداث وعبّر عنها: أولًا، ثم، أخيرًا.'
+        : /سبب|نتيجة/.test(label) ? 'استمع إلى موقف قصير، ثم أكمل: حدث ذلك لأن… مع تقليل التلميح تدريجيًا.'
+        : /فكرة/.test(label) ? 'استمع إلى نص قصير، ثم اختر عنوانًا مناسبًا ولخّصه بجملة.'
+        : /استنتاج|صفة/.test(label) ? 'استمع إلى موقف، ثم اذكر صفة للشخصية ودليلًا من فعلها.'
+        : 'استمع إلى نص قصير، ثم أجب عن: من؟ أين؟ ماذا؟ دون عرض النص.';
+    } else if (c.domain === 'الحروف والأصوات') activity = 'انطق الصوت واعرض الحرف، ثم ميّزه بين ثلاثة حروف واقرأ مقطعين يتضمنانه.';
+    else if (c.kind === 'dictation' || /الإملاء/.test(label)) activity = 'حلّل كلمة إلى أصواتها، ثم اكتبها من الذاكرة وقارنها بالنموذج، وكرّر بكلمة جديدة.';
+    else if (c.kind === 'copy') activity = 'تتبّع نموذج الحرف على السطر، ثم انسخ كلمة مع مراعاة موضع الحرف والمسافة.';
+    else if (c.domain === 'الكلمات والظواهر') activity = 'قارن مثالين للظاهرة، ثم صنّف ثلاث كلمات جديدة واقرأها مستقلًا.';
+    else if (c.domain === 'الجمل والنصوص') activity = 'اقرأ جملة قصيرة قراءة نموذجية، ثم يقرأها الطالب ويطبّق على جملة جديدة.';
+    else if (c.domain === 'الفهم والاستماع') activity = 'اقرأ نصًا قصيرًا، ثم حدّد الإجابة ودليلها من النص، وكرّر بنص جديد.';
+    groups.set(key, {title: c.skillTitle + (c.facet ? ' · ' + c.facet : ''), activity,
+      sample: c.kind === 'listening' ? c.display : (c.teacherText || c.display),
+      check: 'قدّم ثلاث محاولات جديدة دون تلقين، وسجّل المستقل وبمساعدة وغير المتقن. تحقق إضافيًا إذا بقيت العينة محدودة.'});
+  }
+  return [...groups.values()];
 }

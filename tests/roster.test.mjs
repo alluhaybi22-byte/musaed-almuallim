@@ -62,3 +62,25 @@ test('Arabic comma paste keeps guardian separate', () => {
   assert.equal(incoming[0].name, 'طالب');
   assert.equal(incoming[0].guardian, 'ولي');
 });
+
+
+test('all 25 names in side-by-side columns are retained, including separate guardians', () => {
+  const rows = [['م', 'اسم الطالب', 'ولي الأمر', 'م', 'اسم الطالب', 'ولي الأمر']];
+  for (let i = 0; i < 13; i++) rows.push([i+1, 'طالب يمين '+i, 'ولي يمين '+i,
+    i < 12 ? i+14 : '', i < 12 ? 'طالب يسار '+i : '', i < 12 ? 'ولي يسار '+i : '']);
+  const mapping = inferRosterColumns(rows);
+  assert.deepEqual(mapping.nameColumns, [1, 4]);
+  const names = rosterFromRows(rows, mapping, 2, 'أ');
+  assert.equal(names.length, 25);
+  assert.equal(names.find(x => x.name === 'طالب يسار 11').guardian, 'ولي يسار 11');
+  mapping.nameColumns = [4];
+  assert.equal(rosterFromRows(rows, mapping, 2, 'أ').length, 12);
+});
+test('repeated headers and empty rows do not truncate the remainder of a roster', () => {
+  const rows = [...Array.from({length: 22}, () => ['عنوان']), ['م','الاسم الرباعي'],
+    [1,'محمد أحمد علي سعيد'], [], ['م','الاسم الرباعي'], [2,'عبد الله عبد الرحمن علي']];
+  const mapping = inferRosterColumns(rows);
+  assert.equal(mapping.startRow, 23);
+  assert.deepEqual(rosterFromRows(rows, mapping, 2, 'أ').map(x => x.name),
+    ['محمد أحمد علي سعيد', 'عبد الله عبد الرحمن علي']);
+});

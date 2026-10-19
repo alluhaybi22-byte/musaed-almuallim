@@ -6,7 +6,7 @@ const key = (value) =>
     .replace(/[أإآ]/g, 'ا')
     .toLowerCase();
 const isName = (value) =>
-  /^(اسم(ال)?(طالب|تلميذ)|اسماءالطلاب|الاسمالكامل|اسمكامل|الاسم|اسم|studentname|fullname|name)$/.test(
+  /^(اسم(ال)?(طالب|طالبة|تلميذ|تلميذة)(الكامل|كاملا|رباعيا|الرباعي)?|اسماءالطلاب|اسماءالطالبات|الاسمالكامل|الاسمالرباعي|اسمكامل|الاسم|اسم|studentname|fullname|name)$/.test(
     key(value),
   );
 const isGuardian = (value) => /ولي|guardian|parent|father/.test(key(value));
@@ -18,7 +18,7 @@ export function inferRosterColumns(rows) {
   let header = -1,
     nameColumn = -1,
     guardianColumn = -1;
-  for (let i = 0; i < Math.min(20, rows.length); i++) {
+  for (let i = 0; i < rows.length; i++) {
     const col = rows[i].findIndex(isName);
     if (col >= 0) {
       header = i;
@@ -43,35 +43,35 @@ export function inferRosterColumns(rows) {
         break;
       }
   }
-  return {
-    nameColumn: Math.max(0, nameColumn),
-    guardianColumn,
-    startRow: header + 1,
-  };
+  const mapping = { nameColumn: Math.max(0, nameColumn), guardianColumn, startRow: header + 1 };
+  const nameColumns = header < 0 ? [] : rows[header].flatMap((v, i) => isName(v) ? [i] : []);
+  if (nameColumns.length > 1) mapping.nameColumns = nameColumns;
+  return mapping;
 }
 export function rosterFromRows(rows, mapping, grade, section) {
   if (!GRADES.includes(Number(grade))) throw Error('الصف غير صالح.');
-  return rows
-    .slice(mapping.startRow)
-    .filter((row) => !row.some(isStaffMetadata))
-    .map((row) => ({
-      name: normalizeName(row[mapping.nameColumn]),
-      guardian:
-        mapping.guardianColumn >= 0
-          ? normalizeName(row[mapping.guardianColumn])
-          : '',
-      grade: Number(grade),
-      section: normalizeName(section) || 'أ',
-    }))
-    .filter(
-      (s) =>
-        s.name &&
-        !isName(s.name) &&
-        /[\p{L}]/u.test(s.name) &&
-        !/^((اجمالي|إجمالي|المجموع|عدد الطلاب|كشف الطلاب|قائمة الطلاب)(?:\s|:|$)|الصف (الأول|الثاني|الثالث))/.test(
-          s.name,
-        ),
-    );
+  const columns = mapping.nameColumns || [mapping.nameColumn];
+  const header = rows[mapping.startRow - 1] || [];
+  const candidates = [];
+  for (const row of rows.slice(mapping.startRow)) {
+    for (const column of columns) {
+      const next = columns.find((c) => c > column) ?? row.length;
+      const previous = columns.filter((c) => c < column).at(-1) ?? -1;
+      // Metadata beside one block must not remove students in another block.
+      const block = columns.length === 1 ? row : row.slice(previous + 1, next);
+      if (block.some(isStaffMetadata)) continue;
+      const name = normalizeName(row[column]);
+      if (!name || isName(name) || !/[\p{L}]/u.test(name) ||
+          /^((اجمالي|إجمالي|المجموع|عدد الطلاب|كشف الطلاب|قائمة الطلاب)(?:\s|:|$)|الصف (الأول|الثاني|الثالث))/.test(name)) continue;
+      let guardianColumn = mapping.guardianColumn;
+      if (columns.length > 1) {
+        guardianColumn = header.flatMap((value, i) => isGuardian(value) ? [i] : []).sort((a,b) => Math.abs(a-column) - Math.abs(b-column))[0] ?? -1;
+      }
+      candidates.push({name, guardian: guardianColumn >= 0 ? normalizeName(row[guardianColumn]) : '',
+        grade: Number(grade), section: normalizeName(section) || 'أ'});
+    }
+  }
+  return candidates;
 }
 export async function readRosterFile(file) {
   if (file.size > 10 * 1024 * 1024)
@@ -134,7 +134,11 @@ export async function readRosterFile(file) {
         rows: [...table.children]
           .filter((n) => n.localName === 'tr')
           .map((row) =>
-            [...row.children].filter((n) => n.localName === 'tc').map(text),
+            [...row.children].filter((n) => n.localName === 'tc').flatMap((cell) => {
+              const span = Number(cell.getElementsByTagNameNS(WORD_NS, 'gridSpan')[0]?.getAttributeNS(WORD_NS, 'val') || 1);
+              const value = [...cell.getElementsByTagNameNS(WORD_NS, 'p')].map(text).join(' ');
+              return [value, ...Array(Math.max(0, Math.min(100, span) - 1)).fill('')];
+            }),
           )
           .filter((row) => row.some(Boolean)),
       }));
@@ -163,7 +167,6 @@ export async function readRosterFile(file) {
   const XLSX = await import('./vendor/xlsx.mjs');
   const workbook = XLSX.read(bytes, {
     type: 'array',
-    sheetRows: 5001,
     cellFormula: false,
     cellHTML: false,
     cellStyles: false,
@@ -178,3 +181,4 @@ export async function readRosterFile(file) {
     }),
   }));
 }
+

@@ -164,6 +164,8 @@ try {
     .waitFor();
   assert.equal(await page.locator('.item-details tbody tr').count(), 3);
   assert((await page.locator('#report').innerText()).includes('٤٠٪'));
+  assert((await page.locator('.training-plan').innerText()).includes('خطة تدريب مقترحة'));
+  assert((await page.locator('.training-plan').innerText()).includes('صنّف ثلاث كلمات'));
   assert(
     (await page.locator('#report').innerText()).includes('تدريب على الشمسية'),
   );
@@ -367,3 +369,4 @@ try {
   await browser.close();
   server.kill();
 }
+

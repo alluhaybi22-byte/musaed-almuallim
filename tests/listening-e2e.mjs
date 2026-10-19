@@ -81,7 +81,13 @@ try {
     () =>
       document.querySelector('.listening-panel strong')?.textContent === '١',
   );
+  await page.locator('#listening-audio').evaluate(async a => { await a.play(); });
+  await page.waitForFunction(() => document.querySelector('#listening-audio').currentTime > 0.2);
+  const beforeView = await page.locator('#listening-audio').evaluate(a => a.currentTime);
   await click('student-display');
+  assert.equal(await page.locator('#listening-audio').count(), 1);
+  await page.waitForFunction(() => !document.querySelector('#listening-audio').paused);
+  assert((await page.locator('#listening-audio').evaluate(a => a.currentTime)) >= beforeView);
   const text = await page.locator('#app').innerText();
   assert(
     !text.includes('مَنْ رَأَى') &&
@@ -89,6 +95,8 @@ try {
       !text.includes('الإجابة:'),
   );
   await click('student-display');
+  await page.locator('#listening-audio').evaluate(a => a.pause());
+  assert.equal(await page.locator('.listening-panel strong').innerText(), '١');
   // A valid, silent WAV fixture validates file attachment and decoding, not narration quality.
   const wav = Buffer.alloc(844);
   wav.write('RIFF');
@@ -186,3 +194,4 @@ try {
   await browser?.close();
   server.kill();
 }
+

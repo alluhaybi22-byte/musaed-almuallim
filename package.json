@@ -1,6 +1,6 @@
 {
   "name": "musaed-almuallim",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "المساعد للاختبارات التشخيصية في لغتي للصفوف الأولية",
@@ -12,6 +12,7 @@
     "test:e2e": "node tests/e2e.mjs",
     "test:portable": "node tests/portable.mjs",
     "test:review": "node tests/review-e2e.mjs",
+    "test:import": "node tests/import-complete-e2e.mjs",
     "test:listening": "node tests/listening-e2e.mjs"
   },
   "engines": {
@@ -21,3 +22,4 @@
     "@playwright/test": "1.56.1"
   }
 }
+

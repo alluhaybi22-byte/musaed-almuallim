@@ -6,6 +6,7 @@ import {
   facetSummary,
   skillProgress,
   localDateKey,
+  trainingPlan,
 } from '../src/domain.js';
 const skill = {
   id: 'solar',
@@ -126,4 +127,17 @@ test('date filtering respects the local day across UTC midnight', () => {
     '2026-10-15',
   );
   assert.equal(localDateKey('2026-10-14T22:30:00Z', 'UTC'), '2026-10-14');
+});
+
+
+test('training plan includes observed errors and assistance only, grouping each facet once', () => {
+  const r = result('plan','2026-10-19',[5,6,7]);
+  r.answers[r.cards[8].id].score = 'not_assessed';
+  r.answers[r.cards[9].id].score = 'not_taught';
+  r.answers[r.cards[5].id].score = 'assisted';
+  const plan = trainingPlan(r);
+  assert.equal(plan.length, 1);
+  assert(plan[0].title.includes('الشمسية'));
+  assert(plan[0].sample);
+  assert.equal(trainingPlan(result('ok','2026-10-19')).length, 0);
 });
