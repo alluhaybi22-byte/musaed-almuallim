@@ -109,7 +109,7 @@ try {
   assert.equal(await second.page.evaluate(async () => (await (await import('/src/storage.js')).readState()).students.length), 2);
   assert.deepEqual(errors, []);
   await second.context.close();
-  console.log('PASS: simulated Google flow, opt-in upload, separate snapshots, two-device restore preview/settings, no duplicates, session expiry/reload, local persistence, no token storage. Real OAuth remains unconfigured.');
+  console.log('PASS: simulated Google flow, opt-in upload, separate snapshots, two-device restore preview/settings, no duplicates, session expiry/reload, local persistence, no token storage. Real OAuth is not verified by this mock test.');
 } catch (error) {
   console.log('Drive panel on failure:', await debugPage?.locator('#drive-panel').innerText().catch(() => 'not available'));
   throw error;
