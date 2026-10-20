@@ -65,6 +65,7 @@ try {
     .click();
   assert.equal(await page.locator('#setup-lesson option').count(), 3);
   await page.locator('#setup-lesson').selectOption('g2-u1-l2');
+  await page.locator('[data-skill$="-passages"]').check();
   assert.equal(await page.locator('[data-skill]:checked').count(), 1);
   await page.screenshot({
     path: 'test-results/reading-lesson-setup-mobile.png',
@@ -86,6 +87,7 @@ try {
   assert.equal(await page.locator('#setup-lesson').inputValue(), '');
   assert.equal(await page.locator('[data-skill]:checked').count(), 0);
   await page.locator('#setup-lesson').selectOption('g2-u2-l1');
+  await page.locator('[data-skill$="-passages"]').check();
   await action('preview-cards');
   assert(
     (await page.locator('[data-card-edit]').first().inputValue()).includes(
@@ -107,6 +109,7 @@ try {
   );
   await page.locator('#setup-unit').selectOption('6');
   await page.locator('#setup-lesson').selectOption('g2-u6-l1');
+  await page.locator('[data-skill$="-passages"]').check();
   await action('start-assessment');
   assert(
     await page.evaluate(
@@ -125,6 +128,7 @@ try {
     .click();
   await page.locator('#setup-semester').selectOption('1');
   await page.locator('#setup-lesson').selectOption('g2-u1-l2');
+  await page.locator('[data-skill$="-passages"]').check();
   await action('start-assessment');
   await page.screenshot({
     path: 'test-results/reading-passage-mobile.png',

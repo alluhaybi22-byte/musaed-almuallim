@@ -13,7 +13,7 @@ import {
   validateBackup,
 } from '../src/domain.js';
 
-test('all eight second-grade units offer their two distinct lessons and three reading levels', () => {
+test('all eight second-grade units offer their two distinct lessons, reading levels and quick sentence mode', () => {
   assert.equal(READING_LESSONS.length, 16);
   const ids = new Set();
   for (let unit = 1; unit <= 8; unit++) {
@@ -23,7 +23,7 @@ test('all eight second-grade units offer their two distinct lessons and three re
       const skills = lessonReadingSkills(lesson.id);
       assert.deepEqual(
         skills.map((s) => s.readingLevel),
-        ['words', 'sentences', 'passages'],
+        ['words', 'sentences', 'passages', 'single'],
       );
       for (const skill of skills) {
         const cards = questionsFor(skill);
@@ -45,6 +45,11 @@ test('all eight second-grade units offer their two distinct lessons and three re
               unit <= 4 ? 'SM1-lang.pdf' : 'part2-v2.pdf',
             ),
           );
+          if (skill.readingLevel === 'single') {
+            assert.equal(card.display.trim().split(/\s+/).length, 6);
+            assert(readingCardSourceLabel(card).startsWith('جملة تدريبية'));
+            continue;
+          }
           assert(
             lesson.fragments.some(
               (f) =>
