@@ -1,3 +1,4 @@
+import { action as uiAction, prepareAction } from './ui.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
@@ -56,7 +57,7 @@ try {
   for (const grade of [1, 2, 3]) {
     await page.goto('http://localhost:4197');
     await page
-      .locator(`[data-action="open-grade"][data-grade="${grade}"]`)
+      .locator(`[data-action="grade"][data-grade="${grade}"]`)
       .click();
     const importFile = async () => {
       await page.locator('[data-action="roster"]').first().click();
@@ -80,7 +81,7 @@ try {
     assert.equal(await page.locator('.student-row').count(), 28);
     await page.reload();
     await page
-      .locator(`[data-action="open-grade"][data-grade="${grade}"]`)
+      .locator(`[data-action="grade"][data-grade="${grade}"]`)
       .click();
     assert.deepEqual(
       await page.locator('.student-info strong').allTextContents(),

@@ -1,3 +1,4 @@
+import { action as uiAction, prepareAction } from './ui.mjs';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -36,6 +37,7 @@ page.setDefaultTimeout(10000);
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 async function click(name) {
+  await prepareAction(page, name);
   if (name === 'حفظ نتيجة الاختبار' && !(await page.locator('[data-action="finish"]').count())) {
     await page.locator('.nav [data-route="results"]').click();
     await page.locator('[data-action="student-report"]').first().click();
@@ -80,9 +82,9 @@ try {
   await mkdir('test-results', { recursive: true });
   await page.goto('http://localhost:4173');
   await page
-    .getByRole('heading', { name: 'مساحة معلمك', exact: true })
+    .getByRole('heading', { name: 'صفي', exact: true })
     .waitFor();
-  await click('الطلاب');
+  await click('إدارة الطلاب');
   await click('الصف الثاني');
   await click('استيراد Excel أو Word / لصق كشف');
   await page.locator('#roster-file').setInputFiles('test-results/roster.xlsx');
@@ -97,7 +99,7 @@ try {
   await page.getByRole('dialog').waitFor({ state: 'hidden' });
   assert.equal(await page.locator('.student-row').count(), 1);
   await page.reload();
-  await click('الطلاب');
+  await click('إدارة الطلاب');
   await click('الصف الثاني');
   await page.getByText('عينة مراجعة', { exact: true }).waitFor();
   assert((await page.locator('.student-row').innerText()).includes('ولي معدل'));
@@ -195,6 +197,7 @@ try {
     fullPage: true,
   });
   await close();
+  await page.locator('.secondary-details').evaluateAll(xs=>xs.forEach(el=>el.open=true));
   await page.locator('#result-query').fill('عينة مراجعة');
   assert.equal(await page.locator('.result-row').count(), 2);
   await page.locator('#result-semester').selectOption('2');
@@ -202,6 +205,7 @@ try {
   await page.locator('#result-semester').selectOption('');
   await page.locator('#result-query').fill('');
   await click('تقرير الصف');
+  await page.locator('#report-section').selectOption('');
   const opts = await page
     .locator('#report-test option')
     .evaluateAll((els) =>
@@ -273,7 +277,7 @@ try {
   assert((await page.locator('.teacher-text').innerText()).includes('حَسَنٌ'));
   await click('حفظ واستكمال لاحقًا');
   await page
-    .getByRole('heading', { name: 'مساحة معلمك', exact: true })
+    .getByRole('heading', { name: 'صفي', exact: true })
     .waitFor();
   await page.reload();
   await click('استكمال');
@@ -282,7 +286,7 @@ try {
   assert((await page.locator('.teacher-text').innerText()).includes('حَسَنٌ'));
   await click('حفظ واستكمال لاحقًا');
   await page
-    .getByRole('heading', { name: 'مساحة معلمك', exact: true })
+    .getByRole('heading', { name: 'صفي', exact: true })
     .waitFor();
   assert.equal(await page.locator('.backup-reminder').count(), 1);
   const downloadPromise = page.waitForEvent('download');
@@ -345,9 +349,9 @@ try {
   await context.setOffline(true);
   await page.reload();
   await page
-    .getByRole('heading', { name: 'مساحة معلمك', exact: true })
+    .getByRole('heading', { name: 'صفي', exact: true })
     .waitFor();
-  assert.equal(await page.locator('.metric strong').first().textContent(), '٢');
+  assert.equal(await page.locator('.metric strong').first().textContent(), '١');
   await context.setOffline(false);
   const fallbackContext = await browser.newContext();
   await fallbackContext.addInitScript(() => {
@@ -358,7 +362,7 @@ try {
   const fallbackPage = await fallbackContext.newPage();
   await fallbackPage.goto('http://localhost:4173');
   await fallbackPage
-    .getByRole('heading', { name: 'مساحة معلمك', exact: true })
+    .getByRole('heading', { name: 'صفي', exact: true })
     .waitFor();
   assert.equal(
     await fallbackPage

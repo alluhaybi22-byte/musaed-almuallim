@@ -1,3 +1,4 @@
+import { action as uiAction, prepareAction } from './ui.mjs';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -45,13 +46,13 @@ const browser = await pw.chromium.launch({
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-const action = (name) =>
-  page.locator(`[data-action="${name}"]`).first().click();
+const action = name => uiAction(page, name);
 const button = (name) =>
   page.getByRole('button', { name, exact: true }).first().click();
 try {
   await page.goto('http://localhost:4196');
-  await page.locator('[data-action="open-grade"][data-grade="2"]').click();
+  await page.locator('[data-action="grade"][data-grade="2"]').click();
+  await page.locator('.nav [data-route="students"]').click();
   for (const name of ['قارئ الدرس', 'قارئ تالٍ']) {
     await action('add-student');
     await page.locator('#student-form [name="name"]').fill(name);
@@ -65,6 +66,7 @@ try {
     .click();
   assert.equal(await page.locator('#setup-lesson option').count(), 3);
   await page.locator('#setup-lesson').selectOption('g2-u1-l2');
+  await page.locator('.setup-custom').evaluate(el=>el.open=true);
   await page.locator('[data-skill$="-passages"]').check();
   assert.equal(await page.locator('[data-skill]:checked').count(), 1);
   await page.screenshot({
@@ -87,6 +89,7 @@ try {
   assert.equal(await page.locator('#setup-lesson').inputValue(), '');
   assert.equal(await page.locator('[data-skill]:checked').count(), 0);
   await page.locator('#setup-lesson').selectOption('g2-u2-l1');
+  await page.locator('.setup-custom').evaluate(el=>el.open=true);
   await page.locator('[data-skill$="-passages"]').check();
   await action('preview-cards');
   assert(
@@ -109,6 +112,7 @@ try {
   );
   await page.locator('#setup-unit').selectOption('6');
   await page.locator('#setup-lesson').selectOption('g2-u6-l1');
+  await page.locator('.setup-custom').evaluate(el=>el.open=true);
   await page.locator('[data-skill$="-passages"]').check();
   await action('start-assessment');
   assert(
@@ -120,7 +124,8 @@ try {
   await action('finish');
   await page.locator('.assessment-head h1').filter({hasText:'قارئ تالٍ'}).waitFor();
   await page.locator('.mobile-brand[data-route="home"]').click();
-  await page.locator('[data-action="open-grade"][data-grade="2"]').click();
+  await page.locator('[data-action="grade"][data-grade="2"]').click();
+  await page.locator('.nav [data-route="students"]').click();
   await page
     .locator('.student-row')
     .filter({ hasText: 'قارئ الدرس' })
@@ -128,6 +133,7 @@ try {
     .click();
   await page.locator('#setup-semester').selectOption('1');
   await page.locator('#setup-lesson').selectOption('g2-u1-l2');
+  await page.locator('.setup-custom').evaluate(el=>el.open=true);
   await page.locator('[data-skill$="-passages"]').check();
   await action('start-assessment');
   await page.screenshot({
@@ -150,6 +156,7 @@ try {
   );
   await action('pause');
   await page.reload();
+  await page.locator('.secondary-details').evaluateAll(xs=>xs.forEach(el=>el.open=true));
   await page.locator('.student-row').filter({ hasText: 'قارئ الدرس' }).locator('[data-action="resume"]').click();
   assert(
     (await page.locator('.badge.blue').innerText()).includes('عذرًا يا جدي'),
@@ -173,6 +180,7 @@ try {
   assert(report.includes('٦٧٪'));
   await action('close-modal');
   await page.locator('.nav [data-route="home"]').click();
+  await page.locator('.secondary-details').evaluateAll(xs=>xs.forEach(el=>el.open=true));
   await page.locator('.student-row').filter({hasText:'قارئ تالٍ'}).locator('[data-action="resume"]').last().click();
   assert(
     (await page.locator('.assessment-head h1').innerText()).includes(
@@ -200,6 +208,7 @@ async function contextOfflineCheck() {
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.context().setOffline(true);
   await page.reload();
+  await page.locator('.secondary-details').evaluateAll(xs=>xs.forEach(el=>el.open=true));
   await page.locator('.student-row').filter({ hasText: 'قارئ تالٍ' }).locator('[data-action="resume"]').last().click();
   assert(
     (await page.locator('.badge.blue').innerText()).includes('عذرًا يا جدي'),

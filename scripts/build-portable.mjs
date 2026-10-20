@@ -39,6 +39,7 @@ app = app.replace('نسخة تجريبية ${VERSION}', 'نسخة الكمبيو
 const modules = [];
 for (const name of [
   'domain.js',
+  'classroom.js',
   'drive-config.js',
   'drive-storage.js',
   'storage.js',

@@ -1,3 +1,4 @@
+import { action as uiAction, prepareAction } from './ui.mjs';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -46,11 +47,12 @@ const browser = await pw.chromium.launch({
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } }),
   errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-const action = (a) => page.locator(`[data-action="${a}"]`).first().click();
+const action = a => uiAction(page, a);
 const text = () => page.locator('.stimulus').innerText();
 try {
   await page.goto('http://localhost:4198');
-  await page.locator('[data-action="open-grade"][data-grade="2"]').click();
+  await page.locator('[data-action="grade"][data-grade="2"]').click();
+  await page.locator('.nav [data-route="students"]').click();
   for (const name of ['غائب', 'الأول', 'الثاني', 'الثالث', 'الرابع', 'الأخير']) {
     await action('add-student');
     await page.locator('#student-form [name="name"]').fill(name);
@@ -82,7 +84,8 @@ try {
     if(i===1) {
       const sentence=await text();
       await page.reload();
-      await page.locator('.student-row').filter({hasText:'الثالث'}).locator('[data-action="resume"]').click();
+      await page.locator('.secondary-details').evaluateAll(xs=>xs.forEach(el=>el.open=true));
+  await page.locator('.student-row').filter({hasText:'الثالث'}).locator('[data-action="resume"]').click();
       assert.equal(await text(),sentence);
     }
   }

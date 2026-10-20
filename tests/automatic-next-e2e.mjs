@@ -1,3 +1,4 @@
+import { action as uiAction, prepareAction } from './ui.mjs';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -46,12 +47,13 @@ const browser = await pw.chromium.launch({
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } }),
   errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-const action = (a) => page.locator(`[data-action="${a}"]`).first().click();
+const action = a => uiAction(page, a);
 const text = () => page.locator('.stimulus').innerText();
 try {
   await page.goto('http://localhost:4198');
   for(const grade of [1,2,3]) {
-    await page.locator('[data-action="open-grade"][data-grade="'+grade+'"]').click();
+    await page.locator('[data-action="grade"][data-grade="'+grade+'"]').click();
+  await page.locator('.nav [data-route="students"]').click();
     for(const name of ['أول '+grade,'تال '+grade]) {
       await action('add-student');
       await page.locator('#student-form [name="name"]').fill(name);
@@ -95,7 +97,7 @@ try {
       await page.keyboard.press('4');
       await page.waitForFunction(before=>document.querySelector('.assessment-body .row.between small')?.textContent!==before,before);
     }
-    await page.locator('#student-list').waitFor();
+    await page.locator('#session-sheet').waitFor();
     assert.equal(await page.locator('#report').count(),0);
     await page.locator('.nav [data-route="home"]').click();
   }

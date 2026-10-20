@@ -1,3 +1,4 @@
+import { action as uiAction, prepareAction } from './ui.mjs';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
@@ -38,7 +39,7 @@ try {
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('http://localhost:4191');
   await page
-    .getByRole('heading', { name: 'مساحة معلمك', exact: true })
+    .getByRole('heading', { name: 'صفي', exact: true })
     .waitFor();
   await page.evaluate(async () => {
     const { readState, writeState } = await import('/src/storage.js');
@@ -66,8 +67,8 @@ try {
     await writeState(state);
   });
   await page.reload();
-  const click = (action) =>
-    page.locator(`[data-action="${action}"]`).first().click();
+  const click = action => uiAction(page, action);
+  await page.locator('[data-action="grade"][data-grade="2"]').click();
   await click('resume');
   await page.locator('.listening-panel').waitFor();
   await page.locator('#listening-audio').waitFor();
