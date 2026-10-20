@@ -118,7 +118,11 @@
       "shared passage edit invalidates old audio and judgements",
       "complete playback count",
       "uninterrupted playback across student view and question navigation",
-      "nonblocking listening-before-grading advisory"
+      "nonblocking listening-before-grading advisory",
+      "second-grade unit and lesson selection",
+      "textbook lesson words sentences and passage levels",
+      "lesson changes reset custom samples",
+      "lesson-specific draft and report persistence"
     ],
     "description": "Exercise second-semester assessments and teacher-controlled sample editing on mobile.",
     "steps": [
@@ -131,7 +135,9 @@
       "For the solar/lunar skill verify ten classification cards, five lunar then five solar. Grade the five lunar correct and three solar incorrect, save and check the report shows lunar 100%, solar 40%, with the three failed words listed. The task asks classification alone.",
       "For grade 2, semester 1, unit 3, clear selection and choose يقرأ ويكتب التنوين alone. Its ten cards contain five read-only cards and five write-only cards. Mark reading cards correct and writing cards incorrect; عرض الطالب must never show the dictated word. Save and verify independent reading 100% and dictation 0%, with five failed writing cards and their criteria.",
       "Save any active assessment for later. Start a new grade 2 test in semester 1 unit 2. Clear selection and choose only فهم نص مسموع. Start and verify three oral-question cards for مساعدة الجار, with a working audio player and no missing-recording warning. With zero complete listens an advisory appears without disabling manual grading. Start playback, enter عرض الطالب and return while audio continues without reset. Navigate to the next listening question while playing the same passage and verify playback continues; wait for completion and verify the completed-listening count becomes one.",
-      "Use عرض الطالب. The audio controls and listening instruction remain available, but passage, question text and answers must be absent. Return to the teacher. Grade a question, then edit the shared teacher passage through the teacher guide. Verify the old audio is removed, all three question judgements are cleared, and the missing-recording notice appears. Save for later and reload; the edited passage remains."
+      "Use عرض الطالب. The audio controls and listening instruction remain available, but passage, question text and answers must be absent. Return to the teacher. Grade a question, then edit the shared teacher passage through the teacher guide. Verify the old audio is removed, all three question judgements are cleared, and the missing-recording notice appears. Save for later and reload; the edited passage remains.",
+      "Start a fresh grade 2 test. Choose semester 1, unit أقاربي and lesson عذرًا يا جدي. Only مقاطع من نص الدرس is selected initially. Preview three excerpts; the first begins with في حصة القراءة and describes the school library. Their source labels identify the lesson and book pages 36–37. Start, grade the first card correct, save for later, reload and resume. Grade the second incorrect and the third correct, then save. The report identifies عذرًا يا جدي and 67% for passage reading.",
+      "Start a fresh grade 2 test and select unit أصدقائي وجيراني. The lesson selector offers الصديقان and الجار الصغير, with no previous lesson selection. Select الصديقان; preview uses عمار وخالد and the new train, with no school-library excerpts. Use مستويات قراءة الدرس, preview and verify distinct word, sentence and passage cards, each labeled with that lesson. Switching to semester 2 shows its own two lessons; unit 8 offers أحب أن أكون and الطبيبة نورة."
     ],
     "expected": "Both second-semester routes run on mobile; edited cards show the teacher text, active-card editing clears its judgement, and both drafts persist. For first-semester unit 2, bundled listening audio plays, completed listening is counted, the student sees no questions or answers, and editing the shared passage invalidates its old audio and judgements."
   },

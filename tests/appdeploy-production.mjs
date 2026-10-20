@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
+import { VERSION } from '../src/domain.js';
 
 let server;
 if (!process.env.APP_BASE_URL) {
@@ -48,7 +49,7 @@ try {
   await page.getByRole('heading', { name: 'مساحة معلمك', exact: true }).waitFor();
   assert.equal(await page.locator('.metric strong').first().textContent(), '٠');
   await settings();
-  assert((await page.locator('body').innerText()).includes('0.6.0'));
+  assert((await page.locator('body').innerText()).includes(VERSION));
   await page.getByRole('button', { name: 'تجهيز تسجيل دخول Google', exact: true }).waitFor();
   assert.equal(await page.locator('[data-action="drive-save"]').count(), 0);
   assert.equal(await page.locator('[data-action="drive-list"]').count(), 0);
@@ -88,7 +89,7 @@ try {
   await context.setOffline(false);
   assert.deepEqual(errors, []);
   assert.deepEqual(googleRequests, []);
-  console.log('PASS production 0.6.0: configured Drive opt-in with no Google requests, complete 25-name Word import, persistence, no duplicates, backup download and offline reload. Real Google consent/upload not tested.');
+  console.log(`PASS production ${VERSION}: configured Drive opt-in with no Google requests, complete 25-name Word import, persistence, no duplicates, backup download and offline reload. Real Google consent/upload not tested.`);
 } finally {
   await browser.close();
   server?.kill();

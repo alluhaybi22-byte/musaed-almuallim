@@ -1,5 +1,11 @@
 # AppDeploy deployment checklist
 
+## Reading lessons update 0.7.0
+
+Implementation: update the existing frontend-only app-0gwwi6 with a second-grade lesson selector for all eight units and sixteen lessons, separate word/sentence/passage reading skills, sourced excerpts and page labels, lesson-aware reports and draft/next-student continuity. Reconcile the mobile assessment QA workflow. Include the new reading-lessons.js module in web and portable staging; no new binary resources or SDK/backend.
+
+Preflight: 44 unit tests, mobile lesson assessment/draft/report/next-student/offline flow and portable regression pass. Validate the five JSON QA workflows with one sanity test. Build and test Vite production with the new module; compare with current remote sources and send changed text files only. Retain the existing URL and data schema. Poll publication to terminal status and inspect runtime/QA errors.
+
 ## Existing app update 0.6.0 (20 October 2026)
 
 Implementation: retain app-0gwwi6 and its URL; publish complete Word/Excel roster imports, uninterrupted listening, skill-based training plans, and owner-configured opt-in Google Drive backup/restore. No backend or platform SDK is added. Existing IndexedDB schema and student records are retained. Do not republish source-controlled binaries that are unchanged.

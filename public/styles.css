@@ -24,6 +24,7 @@ svg{width:24px;height:24px;flex:none}
 .assessment-options { margin: 18px 0; border: 1px solid var(--line, #dce5ef); border-radius: 16px; padding: 16px; }
 .assessment-options summary { cursor: pointer; font-weight: bold; color: #155da7; }
 .assessment-options[open] > .row { margin-top: 16px; }
+.assessment-body .badge.blue { max-width: 100%; white-space: normal; overflow-wrap: anywhere; border-radius: 12px; }
 .student-display { min-height: 100vh; background: #f5f8fc; padding: 24px; display: grid; align-content: start; gap: 28px; }
 .student-display .prompt-card { width: min(100%, 1100px); margin: 0 auto; padding: 48px 24px; }
 .backup-reminder { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }

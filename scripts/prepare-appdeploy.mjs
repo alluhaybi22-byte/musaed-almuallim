@@ -26,6 +26,7 @@ for (const name of [
   'drive-storage.js',
   'storage.js',
   'questions.js',
+  'reading-lessons.js',
   'task-cards.js',
   'listening-recordings.js',
   'listening.js',
