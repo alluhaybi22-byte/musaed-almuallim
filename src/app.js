@@ -94,6 +94,9 @@ function chooseGrade(value) {
   if (section && !state.students.some(s => s.grade === grade && !s.archived && s.section === section)) section = '';
   rememberClassroom();
 }
+function recordInSection(record) {
+  return !section || (record.sectionAtTest || state.students.find(s => s.id === record.studentId)?.section) === section;
+}
 function sectionOptions(value = section) {
   const sections = [...new Set(state.students.filter(s => s.grade === grade && !s.archived).map(s => s.section))];
   return sections.map(s => '<option value="' + e(s) + '" ' + (s === value ? 'selected' : '') + '>' + e(s) + '</option>').join('');
@@ -305,13 +308,13 @@ function gradeTabs() {
 }
 function home() {
   const roster = state.students.filter(s => s.grade === grade && !s.archived && (!section || s.section === section));
-  const drafts = state.drafts.filter(d => d.grade === grade && (!section || d.sectionAtTest === section) && state.students.some(s => s.id === d.studentId && !s.archived));
-  const recent = state.results.filter(r => r.grade === grade && (!section || r.sectionAtTest === section)).slice(-3).reverse();
+  const drafts = state.drafts.filter(d => d.grade === grade && recordInSection(d) && state.students.some(s => s.id === d.studentId && !s.archived));
+  const recent = state.results.filter(r => r.grade === grade && recordInSection(r)).slice(-3).reverse();
   return `${heading('صفي', 'اختر الدرس مرة واحدة، ثم قيّم طلاب شعبتك بالتتابع.')}${gradeTabs()}
   <section class="classroom-banner"><div><span class="eyebrow">جلسة الحصة</span><h2>${GRADE_NAMES[grade]}</h2><p>اختبار قصير، حفظ تلقائي، وانتقال إلى الطالب التالي.</p></div><img src="./assets/learning-hero.webp" alt="" aria-hidden="true"></section>
   <div class="classroom-toolbar"><label>الشعبة<select id="section-filter"><option value="">اختر الشعبة</option>${sectionOptions()}</select></label><div class="row">${btn('ابدأ اختبارًا', 'start-session', '', roster.length && section ? '' : 'disabled')}${drafts.length ? btn('استكمل الجلسة', 'resume', 'secondary', 'data-id="' + e(drafts.at(-1).id) + '"') : ''}${btn('نتائج صفي', 'nav', 'secondary', 'data-route="results"')}</div></div>
   ${!section && roster.length ? '<p class="notice">اختر الشعبة ليبدأ اختبار طلابها بالترتيب.</p>' : ''}
-  <div class="metrics"><div class="metric"><strong>${ar(roster.length)}</strong><small>طالب في النطاق</small></div><div class="metric"><strong>${ar(recent.length ? state.results.filter(r => r.grade === grade && (!section || r.sectionAtTest === section)).length : 0)}</strong><small>اختبار محفوظ</small></div><div class="metric"><strong>${ar(drafts.length)}</strong><small>اختبار للاستكمال</small></div></div>
+  <div class="metrics"><div class="metric"><strong>${ar(roster.length)}</strong><small>طالب في النطاق</small></div><div class="metric"><strong>${ar(recent.length ? state.results.filter(r => r.grade === grade && recordInSection(r)).length : 0)}</strong><small>اختبار محفوظ</small></div><div class="metric"><strong>${ar(drafts.length)}</strong><small>اختبار للاستكمال</small></div></div>
   <div class="section-head"><h2>طلاب ${section ? 'الشعبة ' + e(section) : 'الصف'}</h2>${btn('إدارة الطلاب', 'nav', 'ghost small', 'data-route="students"')}</div>
   ${roster.length ? '<label class="classroom-search">البحث عن طالب<input id="student-search" type="search" placeholder="اكتب اسم الطالب" value="' + e(query) + '"></label><div id="student-list" class="student-list">' + studentRows(students()) + '</div>' : empty('أضف طلابك للبدء', 'استورد كشف Excel أو Word مرة واحدة، ثم ابدأ الحصة.', btn('استيراد كشف الطلاب', 'roster'))}
   ${drafts.length ? '<details class="panel secondary-details"><summary>الاختبارات المحفوظة للاستكمال</summary>' + drafts.map(d => '<div class="student-row"><strong>' + e(state.students.find(s => s.id === d.studentId)?.name || 'طالب') + '</strong>' + btn('استكمال', 'resume', 'small', 'data-id="' + e(d.id) + '"') + '</div>').join('') + '</details>' : ''}
@@ -500,7 +503,7 @@ function resultFilterHTML() {
 }
 function resultsView() {
   const rs = filteredResults();
-  const sessions = [...new Set([...state.results, ...state.drafts].filter(r => r.grade === grade && (!section || r.sectionAtTest === section)).map(r => r.sessionId).filter(Boolean))].reverse();
+  const sessions = [...new Set([...state.results, ...state.drafts].filter(r => r.grade === grade && recordInSection(r)).map(r => r.sessionId).filter(Boolean))].reverse();
   const sessionList = sessions.slice(0, 10).map(id => {
     const rows = sessionRows(state, id);
     const anchor = rows.find(x => x.result || x.draft);

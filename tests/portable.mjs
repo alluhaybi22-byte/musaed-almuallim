@@ -21,7 +21,7 @@ try{
  await page.locator('[data-action="grade"][data-grade="1"]').click();
   await page.locator('.nav [data-route="students"]').click();
  await page.getByRole('button',{name:'بدء اختبار',exact:true}).click();
- await page.getByRole('button',{name:'إلغاء الكل',exact:true}).click();
+ await uiAction(page,'clear-selection');
  await page.locator('[data-skill$="-listening"]').check();
  await page.getByRole('button',{name:'بدء الاختبار',exact:true}).click();
  await page.locator('#listening-audio').waitFor();
