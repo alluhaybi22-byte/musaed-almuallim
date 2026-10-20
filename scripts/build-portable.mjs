@@ -47,6 +47,7 @@ for (const name of [
   'listening.js',
   'questions.js',
   'reading-lessons.js',
+  'reading-rotation.js',
   'roster-file.js',
 ])
   modules.push(

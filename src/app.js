@@ -35,6 +35,7 @@ import { nextRosterStudent } from './domain.js';
 import { GOOGLE_DRIVE_CLIENT_ID } from './drive-config.js';
 import { readingLessonsFor, lessonReadingSkills, readingCardSourceLabel } from './reading-lessons.js';
 import { createDriveStorage } from './drive-storage.js';
+import { startSentenceRotation, advanceSentenceRotation, sentenceWordCount } from './reading-rotation.js';
 
 const app = document.querySelector('#app'),
   dialogs = document.querySelector('#dialog-root');
@@ -251,15 +252,20 @@ function setup() {
     chosen = all.filter((s) => selected.has(s.id));
   const lessons = readingLessonsFor(grade, semester, unit);
   const lesson = lessons.find(x => x.id === readingLessonId);
-  const cardCount = chosen.reduce((n, s) => n + questionsFor(s).length, 0);
-  return `${heading('إعداد الاختبار', GRADE_NAMES[grade] + ' · اختر ما انتهى تدريسُه.', btn(icon('back') + ' الطلاب', 'nav', 'secondary small', 'data-route="students"'))}<div class="setup"><div class="panel"><div class="form-grid"><label class="span2">الطالب<select id="setup-student"><option value="">اختر الطالب</option>${ss.map((s) => `<option value="${s.id}" ${studentId === s.id ? 'selected' : ''}>${e(s.name)} · ${e(s.section)}</option>`).join('')}</select></label><label>الفصل الدراسي<select id="setup-semester"><option value="1" ${semester === 1 ? 'selected' : ''}>الفصل الأول</option><option value="2" ${semester === 2 ? 'selected' : ''}>الفصل الثاني</option></select></label><label>الوحدة<select id="setup-unit">${us.map((u) => `<option value="${u.unit}" ${unit === u.unit ? 'selected' : ''}>${ar(u.unit)} · ${e(u.name)}</option>`).join('')}</select></label>${lessons.length ? `<label class="span2">الدرس القرائي<select id="setup-lesson"><option value="">تشخيص عام دون درس محدد</option>${lessons.map(x => `<option value="${x.id}" ${readingLessonId === x.id ? 'selected' : ''}>${e(x.title)}</option>`).join('')}</select><small>اختر الدرس لقراءة كلمات وجمل ومقاطع من نصه.</small></label>` : ''}</div><label class="checkline"><input type="checkbox" id="setup-cumulative" ${cumulative ? 'checked' : ''}>اختبار تراكمي يشمل الوحدات السابقة</label><div class="divider"></div><div class="row preset-actions">${btn(grade === 1 ? 'حروف الوحدة' : 'تشخيص القراءة والظواهر', 'preset-core', 'secondary small')}${btn('الفهم والاستماع', 'preset-comprehension', 'secondary small')}${btn('الكتابة والإملاء', 'preset-writing', 'secondary small')}${lesson ? btn('مستويات قراءة الدرس', 'preset-lesson', 'secondary small') : ''}</div><small>اختيارات جاهزة من الوحدة الحالية، يمكن تعديلها.</small><div class="row between"><h2>المهارات</h2><div class="checks-control">${btn('تحديد الظاهر', 'select-visible', 'ghost small')}${btn('إلغاء الكل', 'clear-selection', 'ghost small')}</div></div><label>مجال المهارة<select id="setup-domain"><option value="">جميع المجالات</option>${DOMAINS.map((d) => `<option ${domain === d ? 'selected' : ''}>${d}</option>`).join('')}</select></label><div class="skills-list" style="margin-top:16px">${shown.map((s) => `<label class="skill-option"><input type="checkbox" data-skill="${s.id}" ${selected.has(s.id) ? 'checked' : ''}><span><strong>${e(s.title)}</strong><small>${e(s.domain)} · الوحدة ${ar(s.unit)} · ${s.kind === 'lesson-reading' ? 'نص الدرس' : 'دليل الوحدة'} ص ${ar(s.source.page)}</small></span></label>`).join('')}</div></div><aside class="panel setup-side"><div class="eyebrow">اختبار حسب المنهج</div><h2>${ar(chosen.length)} مهارة مختارة</h2><p class="muted">${ar(cardCount)} بطاقة قابلة للتعديل</p><div class="notice">${lesson ? `مقاطع درس «${e(lesson.title)}» من كتاب لغتي. اختر قراءة الكلمات أو الجمل أو المقاطع من قائمة المهارات، وراجع العينات قبل البدء. المهارات العامة الأخرى تستخدم أمثلة المساعد.` : 'العينات العامة من إعداد المساعد. راجع ملاءمتها لما درّسته، أو اختر الدرس القرائي لاستخدام نصه.'}</div>${btn('مراجعة عينات الاختبار', 'preview-cards', 'secondary', chosen.length ? '' : 'disabled')}${btn('بدء الاختبار ' + icon('arrow'), 'start-assessment', '', !chosen.length || !studentId ? 'disabled' : '')}<small>تصحيح يدوي · حفظ تلقائي للأحكام</small>${!ss.length ? `<div class="notice warning">أضف طالبًا أولًا.${btn('إضافة طالب', 'add-student', 'ghost small')}</div>` : ''}</aside></div>`;
+  const cardCount = chosen.reduce((n, s) => n + (s.readingLevel === 'single' ? 1 : questionsFor(s).length), 0);
+  return `${heading('إعداد الاختبار', GRADE_NAMES[grade] + ' · اختر ما انتهى تدريسُه.', btn(icon('back') + ' الطلاب', 'nav', 'secondary small', 'data-route="students"'))}<div class="setup"><div class="panel"><div class="form-grid"><label class="span2">الطالب<select id="setup-student"><option value="">اختر الطالب</option>${ss.map((s) => `<option value="${s.id}" ${studentId === s.id ? 'selected' : ''}>${e(s.name)} · ${e(s.section)}</option>`).join('')}</select></label><label>الفصل الدراسي<select id="setup-semester"><option value="1" ${semester === 1 ? 'selected' : ''}>الفصل الأول</option><option value="2" ${semester === 2 ? 'selected' : ''}>الفصل الثاني</option></select></label><label>الوحدة<select id="setup-unit">${us.map((u) => `<option value="${u.unit}" ${unit === u.unit ? 'selected' : ''}>${ar(u.unit)} · ${e(u.name)}</option>`).join('')}</select></label>${lessons.length ? `<label class="span2">الدرس القرائي<select id="setup-lesson"><option value="">تشخيص عام دون درس محدد</option>${lessons.map(x => `<option value="${x.id}" ${readingLessonId === x.id ? 'selected' : ''}>${e(x.title)}</option>`).join('')}</select><small>اختر الدرس لاختبار جملة من ست كلمات لكل طالب؛ تتبدل الجمل بالتناوب، ويُعاد الدور بعد أربع جمل.</small></label>` : ''}</div><label class="checkline"><input type="checkbox" id="setup-cumulative" ${cumulative ? 'checked' : ''}>اختبار تراكمي يشمل الوحدات السابقة</label><div class="divider"></div><div class="row preset-actions">${lesson ? btn('جملة واحدة لكل طالب', 'preset-single', 'secondary small') : ''}${btn(grade === 1 ? 'حروف الوحدة' : 'تشخيص القراءة والظواهر', 'preset-core', 'secondary small')}${btn('الفهم والاستماع', 'preset-comprehension', 'secondary small')}${btn('الكتابة والإملاء', 'preset-writing', 'secondary small')}${lesson ? btn('مستويات قراءة الدرس', 'preset-lesson', 'secondary small') : ''}</div><small>اختيارات جاهزة من الوحدة الحالية، يمكن تعديلها.</small><div class="row between"><h2>المهارات</h2><div class="checks-control">${btn('تحديد الظاهر', 'select-visible', 'ghost small')}${btn('إلغاء الكل', 'clear-selection', 'ghost small')}</div></div><label>مجال المهارة<select id="setup-domain"><option value="">جميع المجالات</option>${DOMAINS.map((d) => `<option ${domain === d ? 'selected' : ''}>${d}</option>`).join('')}</select></label><div class="skills-list" style="margin-top:16px">${shown.map((s) => `<label class="skill-option"><input type="checkbox" data-skill="${s.id}" ${selected.has(s.id) ? 'checked' : ''}><span><strong>${e(s.title)}</strong><small>${e(s.domain)} · الوحدة ${ar(s.unit)} · ${s.kind === 'lesson-reading' ? 'نص الدرس' : 'دليل الوحدة'} ص ${ar(s.source.page)}</small></span></label>`).join('')}</div></div><aside class="panel setup-side"><div class="eyebrow">اختبار حسب المنهج</div><h2>${ar(chosen.length)} مهارة مختارة</h2><p class="muted">${ar(cardCount)} بطاقة قابلة للتعديل</p><div class="notice">${lesson ? `اختبار الجملة الواحدة يعرض ست كلمات لكل طالب، ثم جملة أخرى للطالب التالي من بنك أربع جمل تدريبية بمفردات وأحداث الدرس. اختر المستويات الأخرى لقراءة النصوص المقتبسة.` : 'العينات العامة من إعداد المساعد. راجع ملاءمتها لما درّسته، أو اختر الدرس القرائي لاستخدام نصه.'}</div>${btn('مراجعة عينات الاختبار', 'preview-cards', 'secondary', chosen.length ? '' : 'disabled')}${btn('بدء الاختبار ' + icon('arrow'), 'start-assessment', '', !chosen.length || !studentId ? 'disabled' : '')}<small>تصحيح يدوي · حفظ تلقائي للأحكام</small>${!ss.length ? `<div class="notice warning">أضف طالبًا أولًا.${btn('إضافة طالب', 'add-student', 'ghost small')}</div>` : ''}</aside></div>`;
 }
 let customCards = null;
 function chosenCards() {
+  return chosenSelection().cards;
+}
+function chosenSelection() {
   const cards = availableSkills()
     .filter((s) => selected.has(s.id))
     .flatMap(questionsFor);
-  return applyListeningEdits(cards, customCards || {});
+  const student = state.students.find(s => s.id === studentId);
+  const roster = state.students.filter(s => !s.archived && s.grade === grade && s.section === student?.section);
+  return startSentenceRotation(applyListeningEdits(cards, customCards || {}), roster.findIndex(s => s.id === studentId));
 }
 function listeningPlayer(c) {
   const src = safeListeningAudio(c);
@@ -501,6 +507,7 @@ function rosterDialog() {
     'استيراد كشف الطلاب',
     `<form id="roster-form">
     <div class="notice">اختر كشف Excel أو Word من جهازك. تُقرأ الأسماء هنا دون رفع الملف إلى خادم.</div>
+    <label>الصف المستهدف<select id="roster-grade">${[1,2,3].map(g => `<option value="${g}" ${grade === g ? 'selected' : ''}>${GRADE_NAMES[g]}</option>`).join('')}</select></label>
     <label>الفصل<input name="section" value="أ" maxlength="50" required></label>
     <label>ملف الكشف<input type="file" id="roster-file" accept=".xlsx,.xls,.docx,.csv,.tsv,.txt"></label>
     <small>Excel: XLSX وXLS · Word: DOCX · CSV وTSV</small>
@@ -545,9 +552,8 @@ function renderRosterPreview() {
     <label>تجاوز أسطر العنوان<input id="roster-start-row" type="number" min="0" max="${rows.length}" value="${mapping.startRow}"></label></div>
     <fieldset><legend>الجداول والأوراق التي سيُستورد منها الطلاب</legend>${sheets.map((x, i) => `<label class="checkline"><input type="checkbox" data-roster-sheet-include="${i}" ${importedRoster.included.has(i) ? 'checked' : ''}>${e(x.name)} · ${ar(rosterFromRows(x.rows, importedRoster.mappings[i], grade, 'أ').length)} اسم</label>`).join('')}</fieldset>
     ${detected.length > 1 ? `<fieldset><legend>أعمدة الأسماء في الجدول المعروض</legend>${detected.map((col) => `<label class="checkline"><input type="checkbox" data-roster-name-include="${col}" ${(mapping.nameColumns || [mapping.nameColumn]).includes(col) ? 'checked' : ''}>عمود ${ar(col + 1)}</label>`).join('')}</fieldset>` : ''}
-    <div class="notice">معاينة ${ar(candidates.length)} اسم من ${ar(importedRoster.included.size)} جدول/ورقة محددة. المعروض أدناه أول ستة أسماء فقط؛ ستظهر القائمة كاملة قبل الاعتماد.</div><div class="notice">معاينة ${ar(rosterFromRows(rows, mapping, grade, 'أ').length)} اسم صالح في الجدول المعروض. لا تُضاف العناوين والصفوف الفارغة وبيانات المعلم. جميع الأسماء متاحة للمراجعة والتعديل في الخطوة التالية. اختر الأعمدة إن لم تظهر الأسماء الصحيحة.</div>
-    <div style="overflow:auto"><table class="roster-table"><thead><tr><th>اسم الطالب</th><th>ولي الأمر</th></tr></thead><tbody>${candidates
-      .slice(0, 6)
+    <div class="notice">معاينة ${ar(candidates.length)} اسم من ${ar(importedRoster.included.size)} جدول/ورقة محددة. جميع الأسماء ظاهرة في القائمة التالية. الوجهة: ${GRADE_NAMES[grade]}.</div><div class="notice">معاينة ${ar(rosterFromRows(rows, mapping, grade, 'أ').length)} اسم صالح في الجدول المعروض. لا تُضاف العناوين والصفوف الفارغة وبيانات المعلم. جميع الأسماء متاحة للمراجعة والتعديل في الخطوة التالية. اختر الأعمدة إن لم تظهر الأسماء الصحيحة.</div>
+    <div style="max-height:360px;overflow:auto"><table class="roster-table"><thead><tr><th>اسم الطالب</th><th>ولي الأمر</th></tr></thead><tbody>${candidates
       .map((x) => `<tr><td>${e(x.name)}</td><td>${e(x.guardian)}</td></tr>`)
       .join('')}</tbody></table></div>`;
 }
@@ -834,8 +840,10 @@ document.addEventListener('click', async (event) => {
       selected = new Set(
         list
           .filter((s) =>
-            a === 'preset-lesson'
-              ? s.kind === 'lesson-reading'
+            a === 'preset-single'
+              ? s.readingLevel === 'single'
+              : a === 'preset-lesson'
+              ? s.kind === 'lesson-reading' && s.readingLevel !== 'single'
               : a === 'preset-writing'
               ? ['copy', 'dictation'].includes(s.kind)
               : a === 'preset-comprehension'
@@ -873,6 +881,7 @@ document.addEventListener('click', async (event) => {
         )
           throw Error('اكتب الإجابة المتوقعة ومعيار الحكم لكل بطاقة.');
         const id = area.dataset.cardEdit;
+        if (chosenCards().find(c => c.id === id)?.readingLevel === 'single' && sentenceWordCount(area.value) !== 6) throw Error('اكتب جملة من ست كلمات بالضبط.');
         const teacherArea = dialogs.querySelector(
           `[data-card-teacher="${CSS.escape(id)}"]`,
         );
@@ -895,7 +904,8 @@ document.addEventListener('click', async (event) => {
       closeModal();
       toast('حُفظت تعديلات العينات لهذا الاختبار.');
     } else if (a === 'start-assessment') {
-      const cards = chosenCards();
+      const selection = chosenSelection();
+      const cards = selection.cards;
       if (!studentId || !cards.length) throw Error('اختر طالبًا ومهارة.');
       if (cards.length > 1000)
         throw Error('اختر نطاقًا أقصر للاختبار، حتى ألف بطاقة.');
@@ -918,6 +928,7 @@ document.addEventListener('click', async (event) => {
           )
           .map((s) => s.id),
         cards,
+        ...(selection.sentenceRotation ? { sentenceRotation: selection.sentenceRotation } : {}),
         answers: {},
         startedAt: new Date().toISOString(),
         scoring: { ...state.settings },
@@ -1020,7 +1031,7 @@ document.addEventListener('click', async (event) => {
         unit: result.unit,
         cumulative: result.cumulative,
         rosterIds: result.rosterIds,
-        cards: structuredClone(result.cards),
+        ...advanceSentenceRotation(result),
         answers: {},
         startedAt: new Date().toISOString(),
         scoring: { ...state.settings },
@@ -1043,8 +1054,8 @@ document.addEventListener('click', async (event) => {
         .filter((r) => r.grade === grade)
         .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
       reportScope = {
-        skill: '',
-        test: latest?.id || '',
+        skill: latest?.cards[0]?.readingLevel === 'single' ? latest.cards[0].skillId : '',
+        test: latest?.cards[0]?.readingLevel === 'single' ? '' : latest?.id || '',
         section: '',
         semester: '',
         from: '',
@@ -1148,6 +1159,7 @@ document.addEventListener('click', async (event) => {
       const c = active.cards[cardIndex],
         display = document.querySelector('#edit-display').value.trim();
       if (!display) throw Error('لا تترك البطاقة فارغة.');
+      if (c.readingLevel === 'single' && sentenceWordCount(display) !== 6) throw Error('اكتب جملة من ست كلمات بالضبط.');
       if (!document.querySelector('#edit-expected').value.trim())
         throw Error('اكتب الإجابة المتوقعة ومعيار الحكم.');
       if (
@@ -1263,6 +1275,9 @@ document.addEventListener('submit', async (ev) => {
       });
       if (!incoming.length) throw Error('اختر اسمًا واحدًا على الأقل.');
       const out = addStudents(state.students, incoming);
+      grade = rosterReviewData.grade;
+      query = '';
+      section = '';
       await persist({ ...state, students: out.students });
       closeModal();
       render();
@@ -1319,6 +1334,9 @@ document.addEventListener('change', async (ev) => {
       section = t.value;
       document.querySelector('#student-list').innerHTML =
         studentRows(students());
+    } else if (t.id === 'roster-grade') {
+      grade = Number(t.value);
+      renderRosterPreview();
     } else if (t.id === 'setup-student') {
       studentId = t.value;
       render();
@@ -1340,7 +1358,7 @@ document.addEventListener('change', async (ev) => {
     } else if (t.id === 'setup-lesson') {
       const lesson = readingLessonsFor(grade, semester, unit).find(x => x.id === t.value);
       readingLessonId = lesson?.id || '';
-      selected = new Set(lessonReadingSkills(readingLessonId).filter(s => s.readingLevel === 'passages').map(s => s.id));
+      selected = new Set(lessonReadingSkills(readingLessonId).filter(s => s.readingLevel === 'single').map(s => s.id));
       customCards = null;
       domain = '';
       render();
@@ -1353,6 +1371,9 @@ document.addEventListener('change', async (ev) => {
       customCards = null;
       render();
     } else if (t.dataset.skill) {
+      const skill = availableSkills().find(s => s.id === t.dataset.skill);
+      if (t.checked && skill?.readingLevel === 'single') selected.clear();
+      else if (t.checked) availableSkills().filter(s => s.readingLevel === 'single').forEach(s => selected.delete(s.id));
       t.checked
         ? selected.add(t.dataset.skill)
         : selected.delete(t.dataset.skill);

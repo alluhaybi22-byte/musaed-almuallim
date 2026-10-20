@@ -56,7 +56,10 @@
       "name and guardian correction",
       "excluding reviewed rows",
       "all selected Word tables and Excel worksheets",
-      "side-by-side name columns without truncated review"
+      "side-by-side name columns without truncated review",
+      "complete roster preview without six-name truncation",
+      "explicit import grade",
+      "clear stale filters after import"
     ],
     "description": "Manage a small roster on mobile and verify validation, duplicate prevention and recoverable archiving.",
     "steps": [
@@ -68,7 +71,8 @@
       "Edit the pasted student's name, archive them, open الطلاب المؤرشفون and restore them. Reload and search for the updated name.",
       "Using a synthetic DOCX with two tables and 25 distinct students total, select it and verify both suitable tables are selected. Review all 25 names, approve and reload; all 25 remain. Reimport does not duplicate them.",
       "Using a synthetic XLSX with two worksheets containing 13 and 12 distinct students, explicitly select both worksheets, review all 25, approve and reload. Using a separate synthetic XLS with adjacent repeated name/guardian column groups, verify names from both groups are included, not only the first group.",
-      "Try selecting a text-only file renamed broken.xlsx; a readable invalid-file error appears and no names are imported. An empty manual student name cannot be saved."
+      "Try selecting a text-only file renamed broken.xlsx; a readable invalid-file error appears and no names are imported. An empty manual student name cannot be saved.",
+      "Before importing a synthetic 28-name gradebook, filter the student list by a name that does not exist. Open import; the target grade is explicitly visible and editable. After selecting the file, all 28 names appear in the scrollable preview, not only six. Approve and verify all names become visible after stale filters are cleared. Repeat in grades one, two and three; each keeps its own 28 records after reload and reimport, without staff footers or duplicates."
     ],
     "expected": "Real Excel and Word files import correct names and guardians with no duplicates; paste, editing and archive recovery still work, malformed files and blank names create no records."
   },
@@ -122,7 +126,10 @@
       "second-grade unit and lesson selection",
       "textbook lesson words sentences and passage levels",
       "lesson changes reset custom samples",
-      "lesson-specific draft and report persistence"
+      "lesson-specific draft and report persistence",
+      "one six-word sentence per student",
+      "different sentence for next student",
+      "saved rotation and six-word validation"
     ],
     "description": "Exercise second-semester assessments and teacher-controlled sample editing on mobile.",
     "steps": [
@@ -136,8 +143,9 @@
       "For grade 2, semester 1, unit 3, clear selection and choose يقرأ ويكتب التنوين alone. Its ten cards contain five read-only cards and five write-only cards. Mark reading cards correct and writing cards incorrect; عرض الطالب must never show the dictated word. Save and verify independent reading 100% and dictation 0%, with five failed writing cards and their criteria.",
       "Save any active assessment for later. Start a new grade 2 test in semester 1 unit 2. Clear selection and choose only فهم نص مسموع. Start and verify three oral-question cards for مساعدة الجار, with a working audio player and no missing-recording warning. With zero complete listens an advisory appears without disabling manual grading. Start playback, enter عرض الطالب and return while audio continues without reset. Navigate to the next listening question while playing the same passage and verify playback continues; wait for completion and verify the completed-listening count becomes one.",
       "Use عرض الطالب. The audio controls and listening instruction remain available, but passage, question text and answers must be absent. Return to the teacher. Grade a question, then edit the shared teacher passage through the teacher guide. Verify the old audio is removed, all three question judgements are cleared, and the missing-recording notice appears. Save for later and reload; the edited passage remains.",
-      "Start a fresh grade 2 test. Choose semester 1, unit أقاربي and lesson عذرًا يا جدي. Only مقاطع من نص الدرس is selected initially. Preview three excerpts; the first begins with في حصة القراءة and describes the school library. Their source labels identify the lesson and book pages 36–37. Start, grade the first card correct, save for later, reload and resume. Grade the second incorrect and the third correct, then save. The report identifies عذرًا يا جدي and 67% for passage reading.",
-      "Start a fresh grade 2 test and select unit أصدقائي وجيراني. The lesson selector offers الصديقان and الجار الصغير, with no previous lesson selection. Select الصديقان; preview uses عمار وخالد and the new train, with no school-library excerpts. Use مستويات قراءة الدرس, preview and verify distinct word, sentence and passage cards, each labeled with that lesson. Switching to semester 2 shows its own two lessons; unit 8 offers أحب أن أكون and الطبيبة نورة."
+      "Start a fresh grade 2 test. Choose semester 1, unit أقاربي and lesson عذرًا يا جدي. The default is جملة واحدة من ست كلمات لكل طالب. Select مقاطع من نص الدرس for this full-passage workflow; the quick mode becomes unselected. Preview three excerpts; the first begins with في حصة القراءة and describes the school library. Their source labels identify the lesson and book pages 36–37. Start, grade the first card correct, save for later, reload and resume. Grade the second incorrect and the third correct, then save. The report identifies عذرًا يا جدي and 67% for passage reading.",
+      "Start a fresh grade 2 test and select unit أصدقائي وجيراني. The lesson selector offers الصديقان and الجار الصغير, with no previous lesson selection. Select الصديقان; preview uses عمار وخالد and the new train, with no school-library excerpts. Use مستويات قراءة الدرس, preview and verify distinct word, sentence and passage cards, each labeled with that lesson. Switching to semester 2 shows its own two lessons; unit 8 offers أحب أن أكون and الطبيبة نورة.",
+      "Create two adjacent grade 2 students for a fresh test of عذرًا يا جدي. Selecting the lesson defaults to one six-word sentence; preview has one card only. Editing it to three words must show an error and retain the editor. Restore a six-word sentence, begin, grade it and save. Click الطالب التالي: the next student receives exactly one different six-word sentence from the same lesson. Save for later, reload and resume: that sentence is retained. Grade/save and verify its report identifies the lesson. The setup explains that the bank contains four training sentences which repeat after a full cycle."
     ],
     "expected": "Both second-semester routes run on mobile; edited cards show the teacher text, active-card editing clears its judgement, and both drafts persist. For first-semester unit 2, bundled listening audio plays, completed listening is counted, the student sees no questions or answers, and editing the shared passage invalidates its old audio and judgements."
   },

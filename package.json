@@ -1,6 +1,6 @@
 {
   "name": "musaed-almuallim",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "description": "المساعد للاختبارات التشخيصية في لغتي للصفوف الأولية",
@@ -8,14 +8,15 @@
     "dev": "node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
     "build:portable": "node scripts/build-portable.mjs",
-    "test": "node --test tests/domain.test.mjs tests/worker.test.mjs tests/roster.test.mjs tests/review.test.mjs tests/listening.test.mjs tests/listening-worker.test.mjs tests/drive.test.mjs tests/reading-lessons.test.mjs",
+    "test": "node --test tests/domain.test.mjs tests/worker.test.mjs tests/roster.test.mjs tests/review.test.mjs tests/listening.test.mjs tests/listening-worker.test.mjs tests/drive.test.mjs tests/reading-lessons.test.mjs tests/reading-rotation.test.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:portable": "node tests/portable.mjs",
     "test:review": "node tests/review-e2e.mjs",
     "test:import": "node tests/import-complete-e2e.mjs",
     "test:drive": "node tests/drive-e2e.mjs",
     "test:listening": "node tests/listening-e2e.mjs",
-    "test:reading": "node tests/reading-lessons-e2e.mjs"
+    "test:reading": "node tests/reading-lessons-e2e.mjs",
+    "test:single": "node tests/reading-single-e2e.mjs"
   },
   "engines": {
     "node": ">=22"

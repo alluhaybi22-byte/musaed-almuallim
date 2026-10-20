@@ -1,5 +1,11 @@
 # AppDeploy deployment checklist
 
+## Import clarity and single-sentence update 0.8.0
+
+Implementation: keep app-0gwwi6; display every imported name in the preview, show/edit destination grade, and clear stale search/section filters after approval. A private attached workbook is exercised locally in all three grades; its bytes and names are not deployed or committed. Add four six-word training sentences per lesson, one card per student, saved round-robin pool and next-student progression, exact-six-word editing guard, and lesson-skill class reports across rotating sentences.
+
+Preflight: validate all sixteen banks and 28-student cycles; run the actual workbook through review/save/reload/reimport in grades 1–3, plus single-sentence mobile/draft/report/backup and full-passage regression. Reconcile five platform QA workflows, build/test Vite production and portable bundling, compare current snapshot sources and send changed text only. Retain schema, URL and existing binary assets. Poll publication to ready/failed and review returned errors.
+
 ## Reading lessons update 0.7.0
 
 Implementation: update the existing frontend-only app-0gwwi6 with a second-grade lesson selector for all eight units and sixteen lessons, separate word/sentence/passage reading skills, sourced excerpts and page labels, lesson-aware reports and draft/next-student continuity. Reconcile the mobile assessment QA workflow. Include the new reading-lessons.js module in web and portable staging; no new binary resources or SDK/backend.

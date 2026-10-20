@@ -1,3 +1,4 @@
+import { SIX_WORD_SENTENCES } from './reading-rotation.js';
 // مقتطفات من كتابَي لغتي للصف الثاني، طبعة ١٤٤٨، اللذين رفعهما المالك.
 // أُعيدت كتابة الرسم والتشكيل من النص المستخرج؛ لا تُستكمل أحداث غير مقتبسة.
 const READING_BOOKS = {
@@ -244,6 +245,7 @@ export const READING_LEVELS = {
   words: 'كلمات من الدرس',
   sentences: 'جمل من الدرس',
   passages: 'مقاطع من نص الدرس',
+  single: 'جملة واحدة من ست كلمات لكل طالب',
 };
 export const readingLessonsFor = (grade, semester, unit) =>
   READING_LESSONS.filter(
@@ -287,7 +289,12 @@ export function lessonReadingCards(skill) {
   )
     return [];
   let samples = lesson.fragments;
-  if (skill.readingLevel === 'words') {
+  if (skill.readingLevel === 'single') {
+    samples = (SIX_WORD_SENTENCES[lesson.id] || []).map((text) => ({
+      text,
+      page: lesson.fragments[0].page,
+    }));
+  } else if (skill.readingLevel === 'words') {
     const seen = new Set();
     samples = lesson.fragments
       .flatMap((fragment) =>
@@ -330,15 +337,20 @@ export function lessonReadingCards(skill) {
       page: sample.page,
       edition: '1448',
     },
-    provenance: `من نص درس «${lesson.title}» · ص ${sample.page}`,
+    provenance:
+      skill.readingLevel === 'single'
+        ? `جملة تدريبية من مفردات وأحداث درس «${lesson.title}»`
+        : `من نص درس «${lesson.title}» · ص ${sample.page}`,
     display: sample.text,
     teacherText: '',
     instruction:
-      skill.readingLevel === 'words'
-        ? 'اقرأ الكلمة من الدرس.'
-        : skill.readingLevel === 'sentences'
-          ? 'اقرأ الجملة من الدرس.'
-          : 'اقرأ المقطع من الدرس قراءة جهرية.',
+      skill.readingLevel === 'single'
+        ? 'اقرأ هذه الجملة المكونة من ست كلمات.'
+        : skill.readingLevel === 'words'
+          ? 'اقرأ الكلمة من الدرس.'
+          : skill.readingLevel === 'sentences'
+            ? 'اقرأ الجملة من الدرس.'
+            : 'اقرأ المقطع من الدرس قراءة جهرية.',
     expected:
       'متقن إذا قرأ النص المعروض قراءة صحيحة مستقلة دون تلقين. يُقيَّم الفهم في مهمة مستقلة، ولا تُشترط إجابة عن سؤال لهذا الحكم.',
   }));
