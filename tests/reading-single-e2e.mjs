@@ -84,9 +84,8 @@ try {
   const first = await text();
   assert.equal(first.trim().split(/\s+/).length, 6);
   await page.getByRole('button', { name: 'متمكن', exact: true }).click();
-  await action('finish');
-  assert((await page.locator('#report').innerText()).includes('١٠٠٪'));
-  await action('next-student');
+  await page.locator('.assessment-head h1').filter({hasText:'قارئ ثان'}).waitFor();
+  assert.equal(await page.locator('#report').count(),0);
   const second = await text();
   assert.notEqual(first, second);
   assert.equal(second.trim().split(/\s+/).length, 6);
@@ -95,16 +94,13 @@ try {
   await action('resume');
   assert.equal(await text(), second);
   await page.getByRole('button', { name: 'غير مجتاز', exact: true }).click();
-  await action('finish');
-  await action('next-student');
+  await page.locator('.assessment-head h1').filter({hasText:'قارئ ثالث'}).waitFor();
   const third = await text();
   assert.notEqual(second, third);
   assert.notEqual(first, third);
   await page.getByRole('button', { name: 'متمكن', exact: true }).click();
-  await action('finish');
-  await page.locator('#report').waitFor();
-  assert((await page.locator('#dialog-root').innerText()).includes('آخر طالب'));
-  await action('close-modal');
+  await page.locator('#student-list').waitFor();
+  assert.equal(await page.locator('#report').count(),0);
   await page.locator('.nav [data-route="settings"]').click();
   const downloaded = page.waitForEvent('download');
   await action('backup');
@@ -117,6 +113,10 @@ try {
     ),
   );
   assert.equal(new Set(data.results.map((r) => r.cards[0].display)).size, 3);
+  assert.equal(data.drafts.length,0);
+  await page.locator('.nav [data-route="results"]').click();
+  await action('student-report');
+  await page.locator('#report').waitFor();
   assert.deepEqual(errors, []);
   console.log(
     'PASS six-word mode: one card/student, exact word-count validation, three distinct successive sentences, reload/resume, result/report/backup with rotation snapshot.',

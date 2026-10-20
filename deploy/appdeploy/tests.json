@@ -1,6 +1,6 @@
 [
   {
-    "name": "Manual letter assessment, correction, draft and student report",
+    "name": "Automatic assessment save and next student without report",
     "sanity": true,
     "viewport": "desktop",
     "covers": [
@@ -24,24 +24,24 @@
       "keyboard grading 1–4 and Arabic digits",
       "skip student preserves draft",
       "last student skip ends without false result",
-      "typing dialog and student-view shortcut guards"
+      "typing dialog and student-view shortcut guards",
+      "automatic result save and next-student draft in one transaction",
+      "no automatic review or report",
+      "multi-card completion before advancing",
+      "last student saves and stops",
+      "failed final-save retry retains current student"
     ],
-    "description": "Complete a six-card first-grade fatha test, change a judgement and verify the saved report after reload.",
+    "description": "Final judgements save results and start the next student directly; explicit reports remain available later.",
     "steps": [
-      "Open الصف الأول and add تجربة التشخيص followed by طالب تالٍ, both in section أ. Start تجربة التشخيص.",
-      "Clear skills with إلغاء الكل and select only the unit 1 fatha letter skill, then begin the six-card assessment.",
-      "Before grading, open عرض الطالب. Only the prompt and العودة للمعلم appear; no answers, teacher guide or grading controls are exposed. Return to the teacher view.",
-      "Click متمكن on the first card and confirm the second appears automatically. Open خيارات التقييم والملاحظات and click بمساعدة on the second and confirm the third appears automatically. Save for later and reload.",
-      "Resume and return twice using السابقة to the first card. Change it with غير مجتاز; this automatically advances to card two. Its prior judgement remains. Use التالية once to return to card three.",
-      "Grade the remaining four cards متمكن, without clicking التالي between judgements. The last judgement automatically opens review. Add note تدريب إضافي and save.",
-      "The report shows ٦٧٪ and متوسط. Export its CSV and verify the print/PDF action remains available.",
-      "Click الطالب التالي: طالب تالٍ. Its name and same first letter appear with no old judgements. Grade all six cards متمكن and save; its report shows ١٠٠٪ and آخر طالب في هذا الكشف.",
-      "Reload and reopen تجربة التشخيص from النتائج. Its saved report still shows ٦٧٪ with the note, independent of the next student's result.",
-      "In the saved report verify بنود تحتاج تدريبًا includes the incorrect and assisted letter cards. Locate خطة تدريب مقترحة in that report and verify it groups those actual difficulties by skill, includes an activity and recheck, and appears in the printable report without including mastered cards. Repeat the exact same six-card test for the first student with all correct answers. Its report shows comparison to the earlier 67% result; changing a sample must instead remove the matched comparison.",
-      "Create a fresh six-card test with at least two students. Press 1, 2, 3 and 4 to select متفوق, متقدم, متمكن and غير مجتاز, each advancing one card. Arabic digits ١–٤ also work. Holding a number does not grade repeated cards. Typing numbers in a note, opening an editor dialog or entering student view must not grade. Complete and save; verify the report lists each actual rating and a backup retains its distinct score key. Passing ratings count as passed items with no separate numeric weights.",
-      "In a fresh test click تجاوز الطالب: the following roster student starts with empty answers and a different sentence in quick mode. No result is created for the skipped student, whose draft remains after reload and can resume with any earlier judgements. Skip the last student: return home with a resumable draft and no false failed result."
+      "Add three first-grade students in section أ. Start the first student, clear skills and select only the six-card fatha skill.",
+      "Grade the first card with 1 متفوق, the second with 2 متقدم, the third with 3 متمكن, and another with 4 غير مجتاز. Buttons and Arabic digits also work. Each judgement advances only one card; the student does not change until all six cards are evaluated. Previous-card correction, student-only view and note editing remain available; numbers typed in notes must not grade.",
+      "Before the final card save a draft, reload and resume. Grade the last card: there is no review, report or extra save click; the second student immediately appears with empty answers and the same first task. The first result is saved.",
+      "Reload immediately. Resume the second student from home, verifying their name and first card persist. Complete their six cards. The third student appears directly without a report. Complete the third student; return to the student list with no automatic report, duplicate result or fourth student.",
+      "Open النتائج explicitly and open the first student report. Verify recorded performance labels, mastery percentage, incorrect-item details, training plan and CSV/print actions. Reload and reopen the report: the same result persists.",
+      "Start a fresh assessment and use تجاوز الطالب. No result is created for the skipped student; the draft remains resumable and the following student starts. Skipping the last student returns home without a false result.",
+      "In a fresh test, manually open مراجعة الاختبار and save. This also saves and starts the next student without opening a report. Unassessed items remain excluded from mastery."
     ],
-    "expected": "One durable result shows ٦٧٪ and متوسط, previous judgement was replaced, the report and CSV are available and the saved draft is gone."
+    "expected": "Completed assessments are saved once and the next student starts with fresh answers automatically. The last student ends safely, skipped drafts remain, and reports open only from an explicit report action."
   },
   {
     "name": "Mobile roster validation, import, editing and archive recovery",
@@ -146,13 +146,13 @@
       "For grade 3 choose الفصل الثاني and unit 8. Toggle cumulative scope to see earlier units, filter a domain, then select a reading skill and start its assessment.",
       "Verify the header identifies grade 3 and semester 2, use font enlargement controls and save for later. Reload and verify both drafts remain.",
       "Choose الفهم والاستماع in grade 2 setup, review the samples and edit the first listening teacher text and its expected answer together. Start and open خيارات التقييم والملاحظات then دليل المعلم والإجابة المتوقعة. The edited text is visible to the teacher; عرض الطالب hides it. Editing the active card offers the teacher text field and saving clears an earlier judgement.",
-      "For the solar/lunar skill verify ten classification cards, five lunar then five solar. Grade the five lunar correct and three solar incorrect, save and check the report shows lunar 100%, solar 40%, with the three failed words listed. The task asks classification alone.",
-      "For grade 2, semester 1, unit 3, clear selection and choose يقرأ ويكتب التنوين alone. Its ten cards contain five read-only cards and five write-only cards. Mark reading cards correct and writing cards incorrect; عرض الطالب must never show the dictated word. Save and verify independent reading 100% and dictation 0%, with five failed writing cards and their criteria.",
+      "For the solar/lunar skill verify ten classification cards, five lunar then five solar. Grade the five lunar correct and three solar incorrect, let the last judgement save automatically, then open النتائج and its report shows lunar 100%, solar 40%, with the three failed words listed. The task asks classification alone.",
+      "For grade 2, semester 1, unit 3, clear selection and choose يقرأ ويكتب التنوين alone. Its ten cards contain five read-only cards and five write-only cards. Mark reading cards correct and writing cards incorrect; عرض الطالب must never show the dictated word. After automatic saving, open النتائج and its report to verify independent reading 100% and dictation 0%, with five failed writing cards and their criteria.",
       "Save any active assessment for later. Start a new grade 2 test in semester 1 unit 2. Clear selection and choose only فهم نص مسموع. Start and verify three oral-question cards for مساعدة الجار, with a working audio player and no missing-recording warning. With zero complete listens an advisory appears without disabling manual grading. Start playback, enter عرض الطالب and return while audio continues without reset. Navigate to the next listening question while playing the same passage and verify playback continues; wait for completion and verify the completed-listening count becomes one.",
       "Use عرض الطالب. The audio controls and listening instruction remain available, but passage, question text and answers must be absent. Return to the teacher. Grade a question, then edit the shared teacher passage through the teacher guide. Verify the old audio is removed, all three question judgements are cleared, and the missing-recording notice appears. Save for later and reload; the edited passage remains.",
-      "Start a fresh grade 2 test. Choose semester 1, unit أقاربي and lesson عذرًا يا جدي. The default is جملة واحدة من ست كلمات لكل طالب. Select مقاطع من نص الدرس for this full-passage workflow; the quick mode becomes unselected. Preview three excerpts; the first begins with في حصة القراءة and describes the school library. Their source labels identify the lesson and book pages 36–37. Start, grade the first card correct, save for later, reload and resume. Grade the second incorrect and the third correct, then save. The report identifies عذرًا يا جدي and 67% for passage reading.",
+      "Start a fresh grade 2 test. Choose semester 1, unit أقاربي and lesson عذرًا يا جدي. The default is جملة واحدة من ست كلمات لكل طالب. Select مقاطع من نص الدرس for this full-passage workflow; the quick mode becomes unselected. Preview three excerpts; the first begins with في حصة القراءة and describes the school library. Their source labels identify the lesson and book pages 36–37. Start, grade the first card correct, save for later, reload and resume. Grade the second incorrect and the third correct, then the result saves automatically. Open النتائج and the report explicitly; it identifies عذرًا يا جدي and 67% for passage reading.",
       "Start a fresh grade 2 test and select unit أصدقائي وجيراني. The lesson selector offers الصديقان and الجار الصغير, with no previous lesson selection. Select الصديقان; preview uses عمار وخالد and the new train, with no school-library excerpts. Use مستويات قراءة الدرس, preview and verify distinct word, sentence and passage cards, each labeled with that lesson. Switching to semester 2 shows its own two lessons; unit 8 offers أحب أن أكون and الطبيبة نورة.",
-      "Create two adjacent grade 2 students for a fresh test of عذرًا يا جدي. Selecting the lesson defaults to one six-word sentence; preview has one card only. Editing it to three words must show an error and retain the editor. Restore a six-word sentence, begin, grade it and save. Click الطالب التالي: the next student receives exactly one different six-word sentence from the same lesson. Save for later, reload and resume: that sentence is retained. Grade/save and verify its report identifies the lesson. The setup explains that the bank contains four training sentences which repeat after a full cycle."
+      "Create two adjacent grade 2 students for a fresh test of عذرًا يا جدي. Selecting the lesson defaults to one six-word sentence; preview has one card only. Editing it to three words must show an error and retain the editor. Restore a six-word sentence, begin, grade it: it saves automatically and the next student receives exactly one different six-word sentence from the same lesson. Save for later, reload and resume: that sentence is retained. Grade; the result saves without a report. Open النتائج explicitly and verify its report identifies the lesson. The setup explains that the bank contains four training sentences which repeat after a full cycle."
     ],
     "expected": "Both second-semester routes run on mobile; edited cards show the teacher text, active-card editing clears its judgement, and both drafts persist. For first-semester unit 2, bundled listening audio plays, completed listening is counted, the student sees no questions or answers, and editing the shared passage invalidates its old audio and judgements."
   },

@@ -75,12 +75,16 @@ try {
   for (const [i,key] of ['1','٢','3','4'].entries()) {
     if (key === '٢') await page.locator('body').dispatchEvent('keydown', {key});
     else await page.keyboard.press(key);
-    await page.locator('[data-action="finish"]').waitFor();
-    await action('finish');
-    await page.locator('#report').waitFor();
-    assert((await page.locator('#report').innerText()).includes(['متفوق','متقدم','متمكن','غير مجتاز'][i]));
-    await action('next-student');
-    await page.locator('.grading').waitFor();
+    await page.locator('.assessment-head h1').filter({hasText:['الثاني','الثالث','الرابع','الأخير'][i]}).waitFor();
+    assert.equal(await page.locator('#report').count(),0);
+    assert.equal(await page.locator('[data-action="finish"]').count(),0);
+    assert.equal(await page.locator('.score-btn[aria-pressed="true"]').count(),0);
+    if(i===1) {
+      const sentence=await text();
+      await page.reload();
+      await page.locator('.student-row').filter({hasText:'الثالث'}).locator('[data-action="resume"]').click();
+      assert.equal(await text(),sentence);
+    }
   }
   await action('skip-student');
   await page.locator('[data-action="resume"]').first().waitFor();
@@ -102,4 +106,5 @@ try {
   await browser.close();
   server.kill();
 }
+
 

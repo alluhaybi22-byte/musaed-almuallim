@@ -1,0 +1,7 @@
+# Automatic save and next student 0.10.0
+
+Implementation checklist: after the final judgement, persist the completed result and the next student's empty draft in one transaction; advance directly without report/review. Preserve all cards in multi-card tests, sentence rotation and skipped drafts. Stop after the last student without opening a report; reports remain explicitly accessible from results. Manual review/save uses the same completion path. Failed writes must retain the current student and allow retry.
+
+Preflight checklist: browser-check single-sentence and multi-card auto-completion, all ratings/keyboard, reload durability, skip retention, end-of-roster and failed-write retry; reconcile existing platform QA JSON. Run unit/build/portable checks appropriate to changed flow. Deploy changed text only to app-0gwwi6 and poll to ready/failed.
+
+Validation: all 47 unit tests pass; general assessment, review/report, lesson, single-sentence, controls and portable regressions pass with updated explicit-report expectations. The new multi-card browser test passes in all three grades, including an injected final-write failure and retry. Vite production passes the automatic multi-card and four-rating/skip flows. Build and whitespace checks pass. Published snapshot: 1792489836618. Existing conservative manifest-layout warning is unchanged; no frontend, network or backend errors were reported by publication QA. Google Drive real-account consent remains outside this change.

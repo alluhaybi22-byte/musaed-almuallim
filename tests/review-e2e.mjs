@@ -36,6 +36,12 @@ page.setDefaultTimeout(10000);
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 async function click(name) {
+  if (name === 'حفظ نتيجة الاختبار' && !(await page.locator('[data-action="finish"]').count())) {
+    await page.locator('.nav [data-route="results"]').click();
+    await page.locator('[data-action="student-report"]').first().click();
+    await page.locator('#report').waitFor();
+    return;
+  }
   await page.getByRole('button', { name, exact: true }).first().click();
 }
 async function close() {

@@ -149,6 +149,52 @@ async function saveDraft() {
       ],
     });
 }
+async function completeAssessment() {
+  const result = {
+    ...structuredClone(active),
+    completedAt: new Date().toISOString(),
+  };
+  const next = nextRosterStudent(state.students, result);
+  const nextTest = next ? {
+    id: uid(),
+    studentId: next.id,
+    sectionAtTest: next.section,
+    grade: result.grade,
+    semester: result.semester,
+    unit: result.unit,
+    cumulative: result.cumulative,
+    rosterIds: result.rosterIds,
+    ...advanceSentenceRotation(result),
+    answers: {},
+    startedAt: new Date().toISOString(),
+    scoring: { ...state.settings },
+    note: '',
+  } : null;
+  // Commit both transitions together: no lost result or unfinished handoff.
+  await persist({
+    ...state,
+    results: [...state.results.filter(r => r.id !== result.id), result],
+    drafts: [
+      ...state.drafts.filter(d => d.id !== result.id),
+      ...(nextTest ? [nextTest] : []),
+    ],
+  });
+  active = nextTest;
+  cardIndex = 0;
+  review = false;
+  studentDisplay = false;
+  closeModal();
+  grade = result.grade;
+  if (next) {
+    studentId = next.id;
+    route = 'assessment';
+    render();
+    toast('حُفظ تقييم الطالب؛ الآن ' + next.name);
+  } else {
+    nav('students');
+    toast('اكتمل الكشف وحُفظت النتائج. التقارير متاحة في النتائج.');
+  }
+}
 function nav(name) {
   route = name;
   query = '';
@@ -956,9 +1002,13 @@ document.addEventListener('click', async (event) => {
         note: document.querySelector('#answer-note')?.value || '',
         updatedAt: new Date().toISOString(),
       };
-      await saveDraft();
       if (c.kind === 'listening' && !active.listeningDelivery?.[c.passageId]?.count)
         toast('لم تُوثّق قراءة مكتملة لهذا المقطع؛ سجّل قراءة المعلم أو شغّل الصوت كاملًا.');
+      if (cardIndex === active.cards.length - 1 && active.cards.every(card => active.answers[card.id])) {
+        await completeAssessment();
+        return;
+      }
+      await saveDraft();
       if (cardIndex === active.cards.length - 1) review = true;
       else cardIndex++;
       render();
@@ -1007,20 +1057,7 @@ document.addEventListener('click', async (event) => {
       render();
     } else if (a === 'finish') {
       active.note = document.querySelector('#final-note')?.value || '';
-      const result = {
-        ...structuredClone(active),
-        completedAt: new Date().toISOString(),
-      };
-      await persist({
-        ...state,
-        results: [...state.results.filter((r) => r.id !== result.id), result],
-        drafts: state.drafts.filter((d) => d.id !== result.id),
-      });
-      active = null;
-      review = false;
-      nav('results');
-      toast('حُفظت نتيجة الاختبار.');
-      reportModal(studentReportHTML(result), 'student', result.id);
+      await completeAssessment();
      } else if (a === 'next-student' || a === 'skip-student') {
       const skipping = a === 'skip-student';
       if (skipping && (!active || studentDisplay)) return;

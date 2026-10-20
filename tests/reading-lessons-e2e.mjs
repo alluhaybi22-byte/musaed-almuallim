@@ -118,7 +118,7 @@ try {
   );
   await action('review');
   await action('finish');
-  await action('close-modal');
+  await page.locator('.assessment-head h1').filter({hasText:'قارئ تالٍ'}).waitFor();
   await page.locator('.mobile-brand[data-route="home"]').click();
   await page.locator('[data-action="open-grade"][data-grade="2"]').click();
   await page
@@ -161,13 +161,19 @@ try {
       ?.textContent.includes('٣'),
   );
   await button('متمكن');
-  await action('finish');
+  await page.locator('.assessment-head h1').filter({hasText:'قارئ تالٍ'}).waitFor();
+  assert.equal(await page.locator('#report').count(),0);
+  await action('pause');
+  await page.locator('.nav [data-route="results"]').click();
+  await action('student-report');
   await page.locator('#report').waitFor();
   const report = await page.locator('#report').innerText();
   assert(report.includes('الدرس القرائي:'));
   assert(report.includes('عذرًا يا جدي'));
   assert(report.includes('٦٧٪'));
-  await action('next-student');
+  await action('close-modal');
+  await page.locator('.nav [data-route="home"]').click();
+  await page.locator('.student-row').filter({hasText:'قارئ تالٍ'}).locator('[data-action="resume"]').last().click();
   assert(
     (await page.locator('.assessment-head h1').innerText()).includes(
       'قارئ تالٍ',
@@ -194,7 +200,7 @@ async function contextOfflineCheck() {
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.context().setOffline(true);
   await page.reload();
-  await page.locator('.student-row').filter({ hasText: 'قارئ تالٍ' }).locator('[data-action="resume"]').click();
+  await page.locator('.student-row').filter({ hasText: 'قارئ تالٍ' }).locator('[data-action="resume"]').last().click();
   assert(
     (await page.locator('.badge.blue').innerText()).includes('عذرًا يا جدي'),
   );
