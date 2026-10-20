@@ -178,9 +178,21 @@ try {
     (await page.locator('#report').innerText()).includes('تدريب على الشمسية'),
   );
   await close();
-  await startSolar();
-  for (let i = 0; i < 10; i++) await score('متمكن');
-  await click('حفظ نتيجة الاختبار');
+  // Progress reporting must still read historical repeats from restored backups.
+  // New tests now exclude completed lesson/skill pairs, so seed the historical
+  // follow-up record instead of asking the teacher to retest a completed skill.
+  await page.evaluate(async () => {
+    const storage = await import('/src/storage.js');
+    const state = await storage.readState();
+    const prior = state.results.find(r => r.studentId !== 'legacy');
+    const later = {...structuredClone(prior), id: 'historical-followup',
+      completedAt: new Date(Date.parse(prior.completedAt) + 1000).toISOString(),
+      answers: Object.fromEntries(prior.cards.map(c => [c.id, {score: 'proficient', note: ''}]))};
+    await storage.writeState({...state, results: [...state.results, later]});
+  });
+  await page.reload();
+  await page.locator('.nav [data-route="results"]').click();
+  await page.locator('[data-action="student-report"]').first().click();
   await page
     .getByRole('heading', { name: 'تقرير الطالب', exact: true })
     .waitFor();
@@ -380,4 +392,5 @@ try {
   await browser.close();
   server.kill();
 }
+
 

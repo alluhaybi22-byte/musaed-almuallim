@@ -1064,7 +1064,7 @@ fieldset {
   }
   .nav {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 0;
     height: 72px;
   }
@@ -1075,9 +1075,6 @@ fieldset {
     font-size: 11px;
     border-radius: 0;
     justify-content: center;
-  }
-  .nav button:nth-child(5) {
-    display: none;
   }
   .nav button svg {
     width: 21px;
@@ -1192,14 +1189,15 @@ fieldset {
   }
   .setup-side {
     position: static;
-    order: -1;
+    order: 0;
+    width: 100%;
     padding: 17px;
   }
   .setup-side h2 {
     font-size: 19px;
   }
   .setup-side .notice {
-    display: none;
+    display: block;
   }
   .setup-side .btn {
     width: auto;

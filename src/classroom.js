@@ -1,3 +1,4 @@
+import {pendingPlanCards} from './completion.js';
 // Session helpers use saved records; legacy assessments without a session remain readable.
 export function sessionRows(state, sessionId) {
   if (!sessionId) return [];
@@ -11,7 +12,8 @@ export function sessionRows(state, sessionId) {
     const result = state.results.filter(r => r.sessionId === sessionId && r.studentId === id)
       .sort((a,b) => b.completedAt.localeCompare(a.completedAt))[0] || null;
     const draft = state.drafts.find(r => r.sessionId === sessionId && r.studentId === id) || null;
-    return [{student, result, draft}];
+    const completedElsewhere = !result && !!anchor.sessionTemplate && !pendingPlanCards(state, anchor.sessionTemplate, id).length;
+    return [{student, result, draft, completedElsewhere}];
   });
 }
 export function nextSessionStudent(state, current) {
@@ -23,7 +25,8 @@ export function nextSessionStudent(state, current) {
   for (const id of ids.slice(index + 1)) {
     const candidate = state.students.find(s => s.id === id && !s.archived && s.grade === current.grade && s.section === student.section);
     if (!candidate) continue;
-    if (current.sessionId && state.results.some(r => r.sessionId === current.sessionId && r.studentId === id)) continue;
+    if (current.sessionTemplate && !pendingPlanCards(state, current.sessionTemplate, id).length) continue;
+    if (!current.sessionTemplate && current.sessionId && state.results.some(r => r.sessionId === current.sessionId && r.studentId === id)) continue;
     if (current.sessionId && state.drafts.some(r => r.sessionId === current.sessionId && r.studentId === id && r.deferred)) continue;
     return candidate;
   }

@@ -1,4 +1,4 @@
-export const VERSION = '0.11.0';
+export const VERSION = '0.12.0';
 export const GRADES = [1, 2, 3];
 export const GRADE_NAMES = {
   1: 'الأول الابتدائي',

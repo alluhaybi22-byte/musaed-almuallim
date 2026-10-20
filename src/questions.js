@@ -1,5 +1,6 @@
 import { splitTasks } from './task-cards.js';
 import { listeningCards } from './listening.js';
+import {lessonAssessmentCards} from './lesson-assessment.js';
 import { lessonReadingCards } from './reading-lessons.js';
 // العينات العامة من إعداد المساعد؛ مقتطفات دروس القراءة موثقة في reading-lessons.js. التصحيح يدوي.
 const words = ['كِتَابٌ', 'قَلَمٌ', 'مُعَلِّمٌ', 'مَدْرَسَةٌ', 'صَدِيقٌ'];
@@ -33,6 +34,7 @@ const unitWords = {
   5: ['غَسَلَ', 'ثَمَر', 'ظِلّ', 'هَدَف', 'لَعِبَ'],
 };
 export function questionsFor(skill) {
+  if (['lesson-dictation', 'lesson-listening'].includes(skill.kind)) return lessonAssessmentCards(skill);
   if (skill.kind === 'lesson-reading') return lessonReadingCards(skill);
   if (skill.kind === 'listening') {
     const cards = listeningCards(skill);

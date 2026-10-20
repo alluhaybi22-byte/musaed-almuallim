@@ -4,7 +4,7 @@ import {mkdir} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
 const server=spawn(process.execPath,['scripts/serve.mjs'],{env:{...process.env,PORT:'4201'},stdio:['ignore','pipe','pipe']});
 await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('server timeout')),15000);server.stdout.on('data',d=>{if(String(d).includes('http://localhost')){clearTimeout(timer);resolve();}});});
-const browser=await chromium.launch({args:['--no-sandbox']});
+const browser=await chromium.launch({executablePath:process.env.CHROME_EXECUTABLE || undefined,args:['--no-sandbox']});
 const context=await browser.newContext({viewport:{width:390,height:844}});
 const page=await context.newPage(),errors=[];
 page.on('pageerror',e=>errors.push(e.message));
@@ -81,3 +81,4 @@ assert.deepEqual(errors,[]);
 console.log('PASS classroom presets, saved class/section/lesson, automatic next, sentence rotation, undo across students and completion, skip/resume without duplicates, session-specific results, mobile and offline persistence');
 }catch(error){await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/classroom-failure.png',fullPage:true});console.log((await page.locator('body').innerText()).slice(-4000));throw error;}
 finally{await browser.close();server.kill();}
+

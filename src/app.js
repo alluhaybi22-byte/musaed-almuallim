@@ -46,6 +46,8 @@ import {
 } from './reading-rotation.js';
 
 import { sessionRows, nextSessionStudent, performanceCounts } from './classroom.js';
+import {eligibleRoster, instantiatePlan, pendingPlanCards, matchingDraft} from './completion.js';
+import {lessonAssessmentSkills} from './lesson-assessment.js';
 
 const app = document.querySelector('#app'),
   dialogs = document.querySelector('#dialog-root');
@@ -58,6 +60,7 @@ let state,
   semester = 1,
   unit = 1,
   readingLessonId = '',
+  readingLessonIds = [],
   domain = '',
   cumulative = false,
   selected = new Set(),
@@ -83,7 +86,7 @@ function rememberClassroom() {
   classroomPreferences.grade = grade;
   classroomPreferences.sections[grade] = section;
   if (route === 'setup') classroomPreferences.setups[grade] = {
-    semester, unit, readingLessonId, cumulative, selected: [...selected],
+    semester, unit, readingLessonId, readingLessonIds, cumulative, selected: [...selected],
   };
   try { localStorage.setItem(PREF_KEY, JSON.stringify(classroomPreferences)); } catch {}
 }
@@ -119,7 +122,7 @@ function sessionSummary() {
   <div class="metrics"><div class="metric"><strong>${ar(completed)}</strong><small>تم تقييمهم</small></div><div class="metric"><strong>${ar(rows.length - completed)}</strong><small>بانتظار التقييم</small></div><div class="metric"><strong>${ar(rows.length)}</strong><small>طلاب الجلسة</small></div></div>
   <section class="panel session-sheet" id="session-sheet"><table><thead><tr><th>الطالب</th><th>تقدير الأداء</th><th>نسبة الإتقان</th><th>الإجراء</th></tr></thead><tbody>${rows.map(x => {
     const o = x.result ? overall(summarize(x.result.cards, x.result.answers, x.result.scoring), x.result.scoring) : null;
-    return `<tr><td>${e(x.student.name)}</td><td>${x.result ? performanceHTML(x.result) : x.draft?.deferred ? 'تم تجاوزه' : x.student.archived ? 'مؤرشف' : 'لم يُختبر'}</td><td>${o?.percent != null ? ar(o.percent) + '٪' : '—'}</td><td>${x.result ? btn('التقرير', 'student-report', 'small secondary', 'data-id="' + e(x.result.id) + '"') : x.draft && !x.student.archived ? btn('استكمال', 'resume', 'small', 'data-id="' + e(x.draft.id) + '"') : !x.student.archived ? btn('اختبار الطالب', 'session-start-student', 'small', 'data-id="' + e(x.student.id) + '"') : '—'}</td></tr>`;
+    return `<tr><td>${e(x.student.name)}</td><td>${x.result ? performanceHTML(x.result) : x.completedElsewhere ? 'اختُبر سابقًا' : x.draft?.deferred ? 'تم تجاوزه' : x.student.archived ? 'مؤرشف' : 'لم يُختبر'}</td><td>${o?.percent != null ? ar(o.percent) + '٪' : '—'}</td><td>${x.result ? btn('التقرير', 'student-report', 'small secondary', 'data-id="' + e(x.result.id) + '"') : x.draft && !x.student.archived && !x.completedElsewhere ? btn('استكمال', 'resume', 'small', 'data-id="' + e(x.draft.id) + '"') : !x.student.archived && !x.completedElsewhere ? btn('اختبار الطالب', 'session-start-student', 'small', 'data-id="' + e(x.student.id) + '"') : '—'}</td></tr>`;
   }).join('')}</tbody></table></section>
   <div class="row session-actions">${btn('العودة إلى صفي', 'nav', 'secondary', 'data-route="home"')}${rows.length ? btn('طباعة ملخص الجلسة', 'print-session', 'secondary') : ''}</div>
   <p class="muted">تقدير الأداء هو اختيار المعلم لكل بند. نسبة الإتقان هي نسبة البنود المجتازة؛ متفوق ومتقدم ومتمكن تُحسب اجتيازًا بالقيمة نفسها، وتظهر تفاصيلها مستقلة.</p>`;
@@ -229,25 +232,9 @@ async function completeAssessment() {
     ...structuredClone(active),
     completedAt: new Date().toISOString(),
   };
-  const next = nextSessionStudent(state, result);
-  const nextTest = next
-    ? structuredClone(state.drafts.find(d => result.sessionId && d.sessionId === result.sessionId && d.studentId === next.id && !d.deferred) || {
-        id: uid(),
-        studentId: next.id,
-        sectionAtTest: next.section,
-        grade: result.grade,
-        semester: result.semester,
-        unit: result.unit,
-        cumulative: result.cumulative,
-        rosterIds: result.rosterIds,
-        sessionId: result.sessionId,
-        ...advanceSentenceRotation(result),
-        answers: {},
-        startedAt: new Date().toISOString(),
-        scoring: { ...state.settings },
-        note: '',
-      })
-    : null;
+  const view = {...state, results: [...state.results.filter(r => r.id !== result.id), result]};
+  const next = nextSessionStudent(view, result);
+  const nextTest = next ? studentDraft(result, next, view) : null;
   // Commit both transitions together: no lost result or unfinished handoff.
   await persist({
     ...state,
@@ -258,7 +245,7 @@ async function completeAssessment() {
     ],
   });
   active = nextTest;
-  cardIndex = 0;
+  cardIndex = active ? Math.max(0, active.cards.findIndex(c => !active.answers[c.id])) : 0;
   review = false;
   studentDisplay = false;
   closeModal();
@@ -275,6 +262,7 @@ async function completeAssessment() {
   }
 }
 function nav(name) {
+  if (name === 'setup') { initializeSetup(); return; }
   route = name;
   query = '';
   if (name === 'results') resultFilters.section = section;
@@ -285,6 +273,7 @@ function nav(name) {
 function shell(body) {
   const navs = [
     ['home', 'صفي', 'home'],
+    ['setup', 'الاختبار', 'book'],
     ['students', 'إدارة الطلاب', 'students'],
     ['results', 'النتائج', 'results'],
     ['settings', 'الإعدادات', 'settings'],
@@ -308,7 +297,7 @@ function gradeTabs() {
 }
 function home() {
   const roster = state.students.filter(s => s.grade === grade && !s.archived && (!section || s.section === section));
-  const drafts = state.drafts.filter(d => d.grade === grade && recordInSection(d) && state.students.some(s => s.id === d.studentId && !s.archived));
+  const drafts = state.drafts.filter(d => d.grade === grade && recordInSection(d) && state.students.some(s => s.id === d.studentId && !s.archived) && (!d.sessionTemplate || pendingPlanCards(state, d.sessionTemplate, d.studentId).length));
   const recent = state.results.filter(r => r.grade === grade && recordInSection(r)).slice(-3).reverse();
   return `${heading('صفي', 'اختر الدرس مرة واحدة، ثم قيّم طلاب شعبتك بالتتابع.')}${gradeTabs()}
   <section class="classroom-banner"><div><span class="eyebrow">جلسة الحصة</span><h2>${GRADE_NAMES[grade]}</h2><p>اختبار قصير، حفظ تلقائي، وانتقال إلى الطالب التالي.</p></div><img src="./assets/learning-hero.webp" alt="" aria-hidden="true"></section>
@@ -350,69 +339,106 @@ function studentRows(list) {
       );
 }
 function availableSkills() {
-  const skills = curriculum.skills.filter(
-    (s) =>
-      s.grade === grade &&
-      (cumulative
-        ? s.unit <= unit
-        : s.semester === semester && s.unit === unit),
-  );
-  const lesson = readingLessonsFor(grade, semester, unit).find(
-    (x) => x.id === readingLessonId,
-  );
-  return lesson ? [...skills, ...lessonReadingSkills(lesson.id)] : skills;
+  const skills = curriculum.skills.filter(s => s.grade === grade && (cumulative ? s.unit <= unit : s.semester === semester && s.unit === unit));
+  return [...skills, ...readingLessonIds.flatMap(lessonAssessmentSkills)];
+}
+function selectedLessons() {
+  return readingLessonsFor(grade, semester, unit).filter(l => readingLessonIds.includes(l.id));
+}
+function setLessonSelection(value) {
+  const lessons = readingLessonsFor(grade, semester, unit);
+  readingLessonIds = value === 'all' ? lessons.map(l => l.id) : lessons.filter(l => l.id === value).map(l => l.id);
+  readingLessonId = readingLessonIds[0] || '';
+  selected = new Set(readingLessonIds.flatMap(lessonAssessmentSkills).filter(s => s.readingLevel === 'single').map(s => s.id));
+  customCards = null; domain = '';
+}
+function presetFilter(id, s) {
+  if (id === 'single') return s.readingLevel === 'single';
+  if (id === 'words') return readingLessonIds.length ? s.kind === 'lesson-reading' && s.readingLevel === 'words' : s.kind === 'reading';
+  if (id === 'dictation') return s.kind === 'lesson-dictation';
+  if (id === 'listening') return s.kind === 'lesson-listening';
+  if (id === 'passages') return s.kind === 'lesson-reading' && s.readingLevel === 'passages';
+  if (id === 'lesson') return s.kind === 'lesson-reading' && s.readingLevel !== 'single';
+  if (id === 'writing') return ['copy','dictation'].includes(s.kind);
+  if (id === 'comprehension') return ['listening','literal'].includes(s.kind);
+  if (id === 'all') return s.readingLevel !== 'single';
+  return grade === 1 ? s.kind === 'letter' : s.kind === 'reading' || /الشمسية|القمرية|تنوين|ه وت وة/.test(s.title);
+}
+function applyPreset(id) {
+  if (id === 'custom') {setupAdvanced = true; render(); return;}
+  selected = new Set(availableSkills().filter(s => presetFilter(id, s)).map(s => s.id));
+  customCards = null; domain = ''; render();
+}
+function assessmentPlan() {
+  const cards = availableSkills().filter(s => selected.has(s.id)).flatMap(questionsFor).flatMap(c => {
+    if (c.lessonId || !readingLessonIds.length) return [c];
+    return selectedLessons().map(l => ({...c, id: c.id + '-ctx-' + l.id, contextLessonId: l.id, lessonTitle: l.title}));
+  });
+  return {grade, semester, unit, cumulative, cards: applyListeningEdits(cards, customCards || {})};
+}
+function setupRoster(plan = assessmentPlan()) {
+  return section ? eligibleRoster(state, plan, section) : [];
+}
+function studentDraft(reference, student, view = state) {
+  const plan = reference.sessionTemplate;
+  const previous = plan ? matchingDraft(view, plan, student.id) : view.drafts.find(d => reference.sessionId && d.sessionId === reference.sessionId && d.studentId === student.id) || null;
+  const roster = view.students.filter(s => s.grade === reference.grade && s.section === student.section && !s.archived);
+  const generated = plan ? instantiatePlan(view, plan, student.id, roster.findIndex(s => s.id === student.id)) : advanceSentenceRotation(reference);
+  const allowed = plan ? new Set(pendingPlanCards(view, plan, student.id).map(c => c.id)) : null;
+  const retained = previous?.cards.filter(c => !allowed || allowed.has(c.id));
+  const selection = retained?.length ? {...previous, cards: retained} : generated;
+  const cards = selection.cards;
+  const answers = Object.fromEntries(Object.entries(previous?.answers || {}).filter(([id]) => cards.some(c => c.id === id)));
+  return {...selection, id: previous?.id || uid(), sessionId: reference.sessionId, sessionTemplate: plan, studentId: student.id, sectionAtTest: student.section, grade: reference.grade, semester: reference.semester, unit: reference.unit, cumulative: reference.cumulative, rosterIds: reference.rosterIds, cards, answers, deferred: false, scoring: previous?.scoring || {...state.settings}, note: previous?.note || '', startedAt: previous?.startedAt || new Date().toISOString()};
 }
 function initializeSetup(sid = '') {
+  const target = state.students.find(s => s.id === sid && !s.archived);
+  if (target) {grade = target.grade; section = target.section;}
   const saved = classroomPreferences.setups[grade] || {};
   semester = [1, 2].includes(saved.semester) ? saved.semester : 1;
   const units = curriculum.units.filter(u => u.grade === grade && u.semester === semester);
   unit = units.some(u => u.unit === saved.unit) ? saved.unit : units[0].unit;
-  readingLessonId = readingLessonsFor(grade, semester, unit).some(l => l.id === saved.readingLessonId) ? saved.readingLessonId : '';
-  cumulative = saved.cumulative === true;
-  domain = '';
+  const lessons = readingLessonsFor(grade, semester, unit);
+  const ids = Array.isArray(saved.readingLessonIds) ? saved.readingLessonIds : [saved.readingLessonId];
+  readingLessonIds = lessons.filter(l => ids.includes(l.id)).map(l => l.id);
+  readingLessonId = readingLessonIds[0] || '';
+  cumulative = saved.cumulative === true; domain = '';
   const list = availableSkills();
   selected = new Set(Array.isArray(saved.selected) ? saved.selected.filter(id => list.some(s => s.id === id)) : []);
+  if (!selected.size && readingLessonIds.length) selected = new Set(list.filter(s => s.readingLevel === 'single').map(s => s.id));
   if (!selected.size) selected = new Set(list.filter(s => grade === 1 ? s.kind === 'letter' : s.kind === 'reading').map(s => s.id));
-  const roster = state.students.filter(s => s.grade === grade && !s.archived && (!section || s.section === section));
-  studentId = roster.some(s => s.id === sid) ? sid : roster[0]?.id || '';
-  if (studentId) section = state.students.find(s => s.id === studentId).section;
-  customCards = null;
-  setupAdvanced = false;
-  route = 'setup';
-  render();
+  if (!section) section = state.students.find(s => s.grade === grade && !s.archived)?.section || '';
+  studentId = ''; customCards = null; setupAdvanced = false; route = 'setup'; render();
 }
 function setup() {
   const us = curriculum.units.filter(u => u.grade === grade && u.semester === semester);
-  const ss = state.students.filter(s => s.grade === grade && !s.archived && s.section === section);
   const all = availableSkills(), shown = all.filter(s => !domain || s.domain === domain), chosen = all.filter(s => selected.has(s.id));
-  const lessons = readingLessonsFor(grade, semester, unit), lesson = lessons.find(x => x.id === readingLessonId);
-  const cardCount = chosen.reduce((n,s) => n + (s.readingLevel === 'single' ? 1 : questionsFor(s).length), 0);
-  const presets = [
-    ['single', 'جملة لكل طالب', 'ست كلمات، وجملة مختلفة للطالب التالي', !!lesson, s => s.readingLevel === 'single'],
-    ['words', 'قراءة كلمات', lesson ? 'كلمات من الدرس المحدد' : 'كلمات من الوحدة', true, s => lesson ? s.readingLevel === 'words' : s.kind === 'reading'],
-    ['core', grade === 1 ? 'حروف الوحدة' : 'قراءة وظواهر', 'اختيار جاهز من مهارات الوحدة', true, s => grade === 1 ? s.kind === 'letter' : s.kind === 'reading' || /الشمسية|القمرية|تنوين|ه وت وة/.test(s.title)],
-    ['all', 'اختبار شامل', 'جميع مهارات الوحدة دون الاختبار السريع', true, s => s.readingLevel !== 'single'],
-  ];
-  const matched = presets.find(([, , , enabled, filter]) => enabled && chosen.length && selected.size === all.filter(filter).length && all.filter(filter).every(s => selected.has(s.id)))?.[0];
-  return `${heading('إعداد جلسة الاختبار', GRADE_NAMES[grade] + ' · الشعبة ' + e(section), btn('العودة إلى صفي', 'nav', 'secondary small', 'data-route="home"'))}
-  <div class="setup"><section class="panel"><h2>١. اختر الدرس</h2><div class="form-grid">
+  const lessons = readingLessonsFor(grade, semester, unit), lessonCount = readingLessonIds.length;
+  const modes = lessonCount ? [['single','قراءة جمل متنوعة — جملة لكل طالب'],['words','قراءة كلمات من الدرس'],['dictation','الإملاء من كلمات الدرس'],['listening','الاستماع إلى نص الدرس'],['passages','قراءة مقطع من الدرس']] : [['core',grade === 1 ? 'حروف الوحدة' : 'القراءة والظواهر'],['words','قراءة كلمات'],['writing','الكتابة والإملاء'],['comprehension','الفهم والاستماع'],['all','اختبار شامل']];
+  const matched = modes.find(([id]) => chosen.length && selected.size === all.filter(s => presetFilter(id,s)).length && all.filter(s => presetFilter(id,s)).every(s => selected.has(s.id)))?.[0] || 'custom';
+  const plan = assessmentPlan(), pending = setupRoster(plan);
+  const total = state.students.filter(s => !s.archived && s.grade === grade && s.section === section).length;
+  const finished = total - pending.length;
+  return `${heading('إعداد الاختبار', 'الصف والدرس، ثم المهارة، ثم الطلاب غير المختبرين.', btn('العودة إلى صفي', 'nav', 'secondary small', 'data-route="home"'))}
+  <div class="setup"><section class="panel"><h2>١. اختر الصف والدرس</h2>${gradeTabs()}<div class="form-grid">
+  <label>الشعبة<select id="setup-section"><option value="">اختر الشعبة</option>${sectionOptions()}</select></label>
   <label>الفصل الدراسي<select id="setup-semester">${[1,2].map(n => '<option value="' + n + '" ' + (semester === n ? 'selected' : '') + '>الفصل ' + (n === 1 ? 'الأول' : 'الثاني') + '</option>').join('')}</select></label>
-  <label>الوحدة<select id="setup-unit">${us.map(u => '<option value="' + u.unit + '" ' + (unit === u.unit ? 'selected' : '') + '>' + ar(u.unit) + ' · ' + e(u.name) + '</option>').join('')}</select></label>
-  ${lessons.length ? '<label class="span2">الدرس القرائي<select id="setup-lesson"><option value="">مهارات الوحدة دون درس محدد</option>' + lessons.map(l => '<option value="' + e(l.id) + '" ' + (readingLessonId === l.id ? 'selected' : '') + '>' + e(l.title) + '</option>').join('') + '</select></label>' : ''}
-  </div><h2 class="step-heading">٢. اختر نوع الاختبار</h2><div class="quick-tests">${presets.map(([id,title,sub,enabled]) => `<button type="button" class="quick-test ${matched === id ? 'selected' : ''}" data-action="preset-${id}" aria-pressed="${matched === id}" ${enabled ? '' : 'disabled'}><strong>${title}</strong><small>${enabled ? sub : 'اختر درسًا قرائيًا لتفعيل هذا الاختبار'}</small></button>`).join('')}</div>
+  <label class="span2">الوحدة<select id="setup-unit">${us.map(u => '<option value="' + u.unit + '" ' + (unit === u.unit ? 'selected' : '') + '>' + ar(u.unit) + ' · ' + e(u.name) + '</option>').join('')}</select></label>
+  ${lessons.length ? '<label class="span2">الدرس<select id="setup-lesson"><option value="">مهارات الوحدة دون درس محدد</option>' + lessons.map(l => '<option value="' + e(l.id) + '" ' + (readingLessonIds.length === 1 && readingLessonId === l.id ? 'selected' : '') + '>' + e(l.title) + '</option>').join('') + (lessons.length > 1 ? '<option value="all" ' + (readingLessonIds.length > 1 ? 'selected' : '') + '>درسا الوحدة معًا</option>' : '') + '</select></label>' : ''}
+  </div><h2 class="step-heading">٢. اختر المهارة</h2><label>المهارة<select id="setup-skill">${modes.map(([id,label]) => '<option value="' + id + '" ' + (matched === id ? 'selected' : '') + '>' + e(label) + '</option>').join('')}<option value="custom" ${matched === 'custom' ? 'selected' : ''}>مهارات مخصصة</option></select></label>
+  ${matched === 'single' ? '<p class="muted">جملة من ست كلمات لكل طالب من كل درس مختار، وتتغير الجمل بالتناوب.</p>' : ''}
+  ${matched === 'listening' ? '<p class="muted">يقرأ المعلم نص الدرس أو يرفق تسجيلًا مطابقًا، ثم يسأل الطالب شفهيًا.</p>' : ''}
   <details class="setup-custom secondary-details" ${setupAdvanced ? 'open' : ''}><summary>تخصيص الاختبار والمهارات</summary>
   <label class="checkline"><input type="checkbox" id="setup-cumulative" ${cumulative ? 'checked' : ''}>اختبار تراكمي يشمل الوحدات السابقة</label>
-  <div class="row preset-actions">${btn('الفهم والاستماع', 'preset-comprehension', 'secondary small')}${btn('الكتابة والإملاء', 'preset-writing', 'secondary small')}${lesson ? btn('مستويات قراءة الدرس', 'preset-lesson', 'secondary small') : ''}</div>
+  <div class="row preset-actions">${btn('الفهم والاستماع', 'preset-comprehension', 'secondary small')}${btn('الكتابة والإملاء', 'preset-writing', 'secondary small')}${lessonCount ? btn('مستويات قراءة الدرس', 'preset-lesson', 'secondary small') : ''}</div>
   <div class="row between"><h3>المهارات</h3><div class="checks-control">${btn('تحديد الظاهر', 'select-visible', 'ghost small')}${btn('إلغاء الكل', 'clear-selection', 'ghost small')}</div></div>
   <label>مجال المهارة<select id="setup-domain"><option value="">جميع المجالات</option>${DOMAINS.map(d => '<option ' + (domain === d ? 'selected' : '') + '>' + e(d) + '</option>').join('')}</select></label>
   <div class="skills-list">${shown.map(s => '<label class="skill-option"><input type="checkbox" data-skill="' + e(s.id) + '" ' + (selected.has(s.id) ? 'checked' : '') + '><span><strong>' + e(s.title) + '</strong><small>' + e(s.domain) + ' · ص ' + ar(s.source.page) + '</small></span></label>').join('')}</div></details></section>
-  <aside class="panel setup-side"><h2>٣. ابدأ مع الطلاب</h2><label>الشعبة<select id="setup-section"><option value="">اختر الشعبة</option>${sectionOptions()}</select></label><label>ابدأ من الطالب<select id="setup-student"><option value="">اختر الطالب</option>${ss.map(s => '<option value="' + e(s.id) + '" ' + (studentId === s.id ? 'selected' : '') + '>' + e(s.name) + '</option>').join('')}</select></label>
-  <p><strong>${ar(chosen.length)}</strong> مهارة · <strong>${ar(cardCount)}</strong> بطاقة لكل طالب</p>
-  <p class="muted">تُحفظ النتيجة وينتقل الاختبار تلقائيًا إلى الطالب التالي في الشعبة. يمكن تجاوز الطالب واستكماله لاحقًا.</p>
-  ${lesson && matched === 'single' ? '<small>أربع جمل تدريبية من مفردات الدرس، تتكرر بعد دورة كاملة.</small>' : ''}
-  ${btn('بدء الاختبار', 'start-assessment', '', chosen.length && studentId && section ? '' : 'disabled')}
+  <aside class="panel setup-side"><h2>٣. الطلاب غير المختبرين</h2><div id="pending-roster-summary" role="status"><strong>${ar(pending.length)}</strong> طالبًا متبقيًا${chosen.length ? '<p class="muted">اختُبر ' + ar(finished) + ' طالبًا في الدرس والمهارة المحددين، ولن يتكرروا.</p>' : '<p>اختر المهارة لعرض الطلاب.</p>'}</div>
+  ${pending.length && chosen.length ? '<p>يبدأ الاختبار بـ <strong>' + e(pending[0].name) + '</strong>، ثم بقية الأسماء بترتيب الكشف.</p><details class="pending-students"><summary>عرض الأسماء المتبقية</summary><ol>' + pending.map(s => '<li>' + e(s.name) + '</li>').join('') + '</ol></details>' : total && chosen.length ? '<div class="notice">جميع طلاب الشعبة اختُبروا في هذه المهارة والدرس. اختر مهارة أو درسًا آخر.</div>' : !total ? '<div class="notice">أضف طلاب الشعبة من إدارة الطلاب أولًا.</div>' : ''}
+  ${btn('بدء الاختبار', 'start-assessment', '', chosen.length && pending.length && section ? '' : 'disabled')}
   ${btn('مراجعة عينات الاختبار', 'preview-cards', 'secondary', chosen.length ? '' : 'disabled')}
-  <small>اختياراتك محفوظة للجلسة التالية.</small></aside></div>`;
+  <small>الطالب المتجاوز أو صاحب الاختبار غير المكتمل يبقى ضمن غير المختبرين. التقدير غير المجتاز يُعد محاولة مكتملة.</small></aside></div>`;
 }
 let customCards = null;
 
@@ -420,17 +446,10 @@ function chosenCards() {
   return chosenSelection().cards;
 }
 function chosenSelection() {
-  const cards = availableSkills()
-    .filter((s) => selected.has(s.id))
-    .flatMap(questionsFor);
-  const student = state.students.find((s) => s.id === studentId);
-  const roster = state.students.filter(
-    (s) => !s.archived && s.grade === grade && s.section === student?.section,
-  );
-  return startSentenceRotation(
-    applyListeningEdits(cards, customCards || {}),
-    roster.findIndex((s) => s.id === studentId),
-  );
+  const plan = assessmentPlan();
+  const roster = state.students.filter(s => !s.archived && s.grade === grade && s.section === section);
+  const first = setupRoster(plan)[0] || roster[0];
+  return instantiatePlan(first && setupRoster(plan).length ? state : {...state, results: []}, plan, first?.id || '', roster.findIndex(s => s.id === first?.id));
 }
 function listeningPlayer(c) {
   const src = safeListeningAudio(c);
@@ -461,7 +480,7 @@ function assessment() {
     return `<section class="student-display"><div class="row between"><small>مهارة الاستماع</small>${btn('العودة للمعلم', 'student-display', 'secondary small')}</div><div class="prompt-card"><div class="stimulus">استمع جيدًا، ثم أجب شفهيًا.</div><p>استمع إلى المقطع، ثم أجب عن أسئلة المعلم.</p>${listeningPlayer(c) || '<p>يقرأ المعلم النص بصوته.</p>'}</div></section>`;
   if (studentDisplay)
     return `<section class="student-display"><div class="row between"><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small>${btn('العودة للمعلم', 'student-display', 'secondary small')}</div><div class="prompt-card"><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div></section>`;
-  return `<section class="assessment-body"><div class="assessment-head"><div><h1>${e(student?.name || 'الطالب')}</h1>${sessionProgress}<p>${GRADE_NAMES[active.grade]} · الفصل ${ar(active.semester)} · ${e(c.domain)}</p></div><div class="row">${btn('عرض الطالب', 'student-display', 'secondary small')}${btn('تجاوز الطالب', 'skip-student', 'secondary small')}${btn('حفظ واستكمال لاحقًا', 'pause', 'secondary small')}${btn('إنهاء الجلسة', 'end-session', 'secondary small')}${undoButton()}</div></div><div class="row between"><span class="badge blue">${e(c.skillTitle)}${c.facet ? ' · ' + e(c.facet) : ''}</span><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small></div><div class="progress"><i style="width:${pct}%"></i></div><div class="prompt-card"><small>المهمة</small><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div><div class="grading">${['excellent', 'advanced', 'proficient', 'incorrect'].map((k, i) => `<button class="score-btn ${answer?.score === k ? 'selected' : ''}" data-action="score" data-score="${k}" aria-label="${SCORES[k]}" aria-keyshortcuts="${i + 1}" aria-pressed="${answer?.score === k}">${i + 1} · ${SCORES[k]}</button>`).join('')}</div><small class="grading-help">١ متفوق · ٢ متقدم · ٣ متمكن · ٤ غير مجتاز — تُحفظ النتيجة تلقائيًا.</small><details class="assessment-options"><summary>خيارات التقييم والملاحظات</summary><div class="row between"><div class="row">${['assisted', 'not_assessed', 'not_taught'].map((k) => btn(SCORES[k], 'score', 'ghost small', 'data-score="' + k + '" aria-pressed="' + (answer?.score === k) + '"')).join('')}</div><div class="font-controls"><label for="font-size">حجم العرض</label><input id="font-size" type="range" min="36" max="120" value="${state.settings.fontSize}"></div></div><details class="teacher-hint"><summary>دليل المعلم والإجابة المتوقعة</summary>${c.teacherText ? `<p class="teacher-text">${e(c.teacherText)}</p>` : ''}<p>${e(c.expected)}</p><small>طبعة ${e(c.source.edition)} · ${c.kind === 'lesson-reading' ? e(readingCardSourceLabel(c)) : 'دليل الوحدة ص ' + ar(c.source.page) + ' · العينة من إعداد المساعد'}</small>${btn('تعديل هذه البطاقة', 'edit-active-card', 'ghost small')}</details><label class="assessment-note">ملاحظة على هذه البطاقة<textarea id="answer-note" placeholder="اختياري">${e(answer?.note || '')}</textarea></label></details><div class="assessment-tools">${btn(icon('back') + ' السابقة', 'previous', 'secondary', cardIndex === 0 ? 'disabled' : '')}${btn('مراجعة الاختبار', 'review', 'ghost')}${btn(cardIndex === active.cards.length - 1 ? 'مراجعة وحفظ' : 'التالية ' + icon('arrow'), 'next')}</div></section>`;
+  return `<section class="assessment-body"><div class="assessment-head"><div><h1>${e(student?.name || 'الطالب')}</h1>${sessionProgress}<p>${GRADE_NAMES[active.grade]} · الفصل ${ar(active.semester)} · ${e(c.domain)}</p></div><div class="row">${btn('عرض الطالب', 'student-display', 'secondary small')}${btn('تجاوز الطالب', 'skip-student', 'secondary small')}${btn('حفظ واستكمال لاحقًا', 'pause', 'secondary small')}${btn('إنهاء الجلسة', 'end-session', 'secondary small')}${undoButton()}</div></div><div class="row between"><span class="badge blue">${e(c.skillTitle)}${c.facet ? ' · ' + e(c.facet) : ''}</span><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small></div><div class="progress"><i style="width:${pct}%"></i></div><div class="prompt-card"><small>المهمة</small><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div><div class="grading">${['excellent', 'advanced', 'proficient', 'incorrect'].map((k, i) => `<button class="score-btn ${answer?.score === k ? 'selected' : ''}" data-action="score" data-score="${k}" aria-label="${SCORES[k]}" aria-keyshortcuts="${i + 1}" aria-pressed="${answer?.score === k}">${i + 1} · ${SCORES[k]}</button>`).join('')}</div><small class="grading-help">١ متفوق · ٢ متقدم · ٣ متمكن · ٤ غير مجتاز — تُحفظ النتيجة تلقائيًا.</small><details class="assessment-options"><summary>خيارات التقييم والملاحظات</summary><div class="row between"><div class="row">${['assisted', 'not_assessed', 'not_taught'].map((k) => btn(SCORES[k], 'score', 'ghost small', 'data-score="' + k + '" aria-pressed="' + (answer?.score === k) + '"')).join('')}</div><div class="font-controls"><label for="font-size">حجم العرض</label><input id="font-size" type="range" min="36" max="120" value="${state.settings.fontSize}"></div></div><details class="teacher-hint"><summary>دليل المعلم والإجابة المتوقعة</summary>${c.teacherText ? `<p class="teacher-text">${e(c.teacherText)}</p>` : ''}<p>${e(c.expected)}</p><small>طبعة ${e(c.source.edition)} · ${c.lessonId ? e(c.provenance || readingCardSourceLabel(c)) : 'دليل الوحدة ص ' + ar(c.source.page) + ' · العينة من إعداد المساعد'}</small>${btn('تعديل هذه البطاقة', 'edit-active-card', 'ghost small')}</details><label class="assessment-note">ملاحظة على هذه البطاقة<textarea id="answer-note" placeholder="اختياري">${e(answer?.note || '')}</textarea></label></details><div class="assessment-tools">${btn(icon('back') + ' السابقة', 'previous', 'secondary', cardIndex === 0 ? 'disabled' : '')}${btn('مراجعة الاختبار', 'review', 'ghost')}${btn(cardIndex === active.cards.length - 1 ? 'مراجعة وحفظ' : 'التالية ' + icon('arrow'), 'next')}</div></section>`;
 }
 function resultRows(rs) {
   return `<div class="results-list">${rs
@@ -1007,7 +1026,7 @@ document.addEventListener('click', async (event) => {
       nav(t.dataset.route);
     } else if (a === 'grade') {
       chooseGrade(Number(t.dataset.grade));
-      render();
+      if (route === 'setup') initializeSetup(); else render();
     } else if (a === 'open-grade') {
       chooseGrade(Number(t.dataset.grade));
       nav('home');
@@ -1016,14 +1035,13 @@ document.addEventListener('click', async (event) => {
       initializeSetup();
     } else if (a === 'session-start-student') {
       const rows = sessionRows(state, currentSessionId);
-      const target = rows.find(x => x.student.id === t.dataset.id && !x.student.archived && !x.result);
+      const target = rows.find(x => x.student.id === t.dataset.id && !x.student.archived && !x.result && !x.completedElsewhere);
       if (!target) throw Error('الطالب غير متاح في هذه الجلسة.');
       const anchor = rows.map(x => x.result || x.draft).find(Boolean);
-      const rotation = anchor.sentenceRotation ? startSentenceRotation(anchor.sentenceRotation.pool, anchor.rosterIds.indexOf(target.student.id)) : {cards: structuredClone(anchor.cards)};
-      active = {id: uid(), sessionId: currentSessionId, studentId: target.student.id, sectionAtTest: target.student.section, grade: anchor.grade, semester: anchor.semester, unit: anchor.unit, cumulative: anchor.cumulative, rosterIds: anchor.rosterIds, ...rotation, answers: {}, scoring: anchor.scoring, startedAt: new Date().toISOString(), note: ''};
+      active = studentDraft({...anchor, sessionId: currentSessionId}, target.student);
       await saveDraft();
       grade = active.grade; section = active.sectionAtTest; studentId = active.studentId;
-      cardIndex = 0; review = false; studentDisplay = false; lastJudgement = null;
+      cardIndex = Math.max(0, active.cards.findIndex(c => !active.answers[c.id])); review = false; studentDisplay = false; lastJudgement = null;
       route = 'assessment'; render();
     } else if (a === 'open-session') {
       currentSessionId = t.dataset.id;
@@ -1092,32 +1110,7 @@ document.addEventListener('click', async (event) => {
       studentDisplay = !studentDisplay;
       render();
     } else if (a.startsWith('preset-')) {
-      const list = availableSkills();
-      selected = new Set(
-        list
-          .filter((s) =>
-            a === 'preset-single'
-              ? s.readingLevel === 'single'
-              : a === 'preset-words'
-                ? readingLessonId ? s.readingLevel === 'words' : s.kind === 'reading'
-              : a === 'preset-all'
-                ? s.readingLevel !== 'single'
-              : a === 'preset-lesson'
-                ? s.kind === 'lesson-reading' && s.readingLevel !== 'single'
-                : a === 'preset-writing'
-                  ? ['copy', 'dictation'].includes(s.kind)
-                  : a === 'preset-comprehension'
-                    ? ['listening', 'literal'].includes(s.kind)
-                    : grade === 1
-                      ? s.kind === 'letter'
-                      : s.kind === 'reading' ||
-                        /الشمسية|القمرية|تنوين|ه وت وة/.test(s.title),
-          )
-          .map((s) => s.id),
-      );
-      customCards = null;
-      domain = '';
-      render();
+      applyPreset(a.slice(7));
     } else if (a === 'select-visible') {
       availableSkills()
         .filter((s) => !domain || s.domain === domain)
@@ -1168,49 +1161,18 @@ document.addEventListener('click', async (event) => {
       closeModal();
       toast('حُفظت تعديلات العينات لهذا الاختبار.');
     } else if (a === 'start-assessment') {
-      const selection = chosenSelection();
-      const cards = selection.cards;
-      if (!studentId || !cards.length) throw Error('اختر طالبًا ومهارة.');
-      if (cards.length > 1000)
-        throw Error('اختر نطاقًا أقصر للاختبار، حتى ألف بطاقة.');
-      const chosenStudent = state.students.find(s => s.id === studentId && !s.archived && s.grade === grade && s.section === section);
-      if (!chosenStudent) throw Error('اختر طالبًا من الشعبة الحالية.');
-      lastJudgement = null;
-      currentSessionId = uid();
-      active = {
-        id: uid(),
-        sessionId: currentSessionId,
-        studentId,
-        sectionAtTest:
-          state.students.find((s) => s.id === studentId)?.section || '',
-        grade,
-        semester,
-        unit,
-        cumulative,
-        rosterIds: state.students
-          .filter(
-            (s) =>
-              !s.archived &&
-              s.grade === grade &&
-              s.section ===
-                state.students.find((x) => x.id === studentId)?.section,
-          )
-          .map((s) => s.id),
-        cards,
-        ...(selection.sentenceRotation
-          ? { sentenceRotation: selection.sentenceRotation }
-          : {}),
-        answers: {},
-        startedAt: new Date().toISOString(),
-        scoring: { ...state.settings },
-        note: '',
-      };
-      cardIndex = 0;
-      studentDisplay = false;
-      review = false;
-      await saveDraft();
-      route = 'assessment';
-      render();
+      const plan = assessmentPlan(), roster = setupRoster(plan);
+      if (!section || !plan.cards.length) throw Error('اختر الصف والشعبة والمهارة.');
+      if (!roster.length) throw Error('لا يوجد طلاب لم يُختبروا في هذا الدرس والمهارة.');
+      if (plan.cards.length > 1000) throw Error('اختر نطاقًا أقصر للاختبار، حتى ألف بطاقة.');
+      const first = roster[0], saved = matchingDraft(state, plan, first.id);
+      currentSessionId = saved?.sessionId || uid();
+      const reference = {sessionId: currentSessionId, sessionTemplate: plan, grade, semester, unit, cumulative, rosterIds: roster.map(s => s.id)};
+      active = studentDraft(reference, first);
+      studentId = first.id; lastJudgement = null;
+      cardIndex = Math.max(0, active.cards.findIndex(c => !active.answers[c.id]));
+      studentDisplay = false; review = false;
+      await saveDraft(); route = 'assessment'; render();
     } else if (a === 'listening-attach') {
       document.querySelector('#listening-file')?.click();
     } else if (a === 'listening-read') {
@@ -1284,6 +1246,8 @@ document.addEventListener('click', async (event) => {
       if (!active) throw Error('المسودة غير موجودة.');
       const resumedStudent = state.students.find(s => s.id === active.studentId && !s.archived);
       if (!resumedStudent) { active = null; throw Error('الطالب مؤرشف أو غير موجود.'); }
+      if (active.sessionTemplate && !pendingPlanCards(state, active.sessionTemplate, active.studentId).length) { active = null; toast('اكتملت هذه المهارة للطالب في جلسة أخرى.'); nav('home'); return; }
+      if (active.sessionTemplate) active = studentDraft(active, resumedStudent);
       grade = active.grade;
       section = resumedStudent.section;
       currentSessionId = active.sessionId || '';
@@ -1324,23 +1288,8 @@ document.addEventListener('click', async (event) => {
       }
       const next = result && nextSessionStudent(state, result);
       if (!next) throw Error('لا يوجد طالب تالٍ في هذا الكشف.');
-      active = structuredClone(state.drafts.find(d => result.sessionId && d.sessionId === result.sessionId && d.studentId === next.id && !d.deferred) || {
-        id: uid(),
-        studentId: next.id,
-        sectionAtTest: next.section,
-        grade: result.grade,
-        semester: result.semester,
-        unit: result.unit,
-        cumulative: result.cumulative,
-        rosterIds: result.rosterIds,
-        sessionId: result.sessionId,
-        ...advanceSentenceRotation(result),
-        answers: {},
-        startedAt: new Date().toISOString(),
-        scoring: { ...state.settings },
-        note: '',
-      });
-      cardIndex = 0;
+      active = studentDraft(result, next);
+      cardIndex = Math.max(0, active.cards.findIndex(c => !active.answers[c.id]));
       studentDisplay = false;
       review = false;
       grade = result.grade;
@@ -1669,15 +1618,17 @@ document.addEventListener('change', async (ev) => {
       renderRosterPreview();
     } else if (t.id === 'setup-section') {
       section = t.value;
-      studentId = state.students.find(s => s.grade === grade && !s.archived && s.section === section)?.id || '';
+      studentId = ''; 
       rememberClassroom();
       render();
+    } else if (t.id === 'setup-skill') {
+      applyPreset(t.value);
     } else if (t.id === 'setup-student') {
       studentId = t.value;
       render();
     } else if (t.id === 'setup-semester') {
       semester = Number(t.value);
-      readingLessonId = '';
+      readingLessonId = ''; readingLessonIds = [];
       unit = curriculum.units.find(
         (u) => u.grade === grade && u.semester === semester,
       ).unit;
@@ -1686,22 +1637,12 @@ document.addEventListener('change', async (ev) => {
       render();
     } else if (t.id === 'setup-unit') {
       unit = Number(t.value);
-      readingLessonId = '';
+      readingLessonId = ''; readingLessonIds = [];
       selected = new Set();
       customCards = null;
       render();
     } else if (t.id === 'setup-lesson') {
-      const lesson = readingLessonsFor(grade, semester, unit).find(
-        (x) => x.id === t.value,
-      );
-      readingLessonId = lesson?.id || '';
-      selected = new Set(
-        lessonReadingSkills(readingLessonId)
-          .filter((s) => s.readingLevel === 'single')
-          .map((s) => s.id),
-      );
-      customCards = null;
-      domain = '';
+      setLessonSelection(t.value);
       render();
     } else if (t.id === 'setup-domain') {
       domain = t.value;
@@ -1713,7 +1654,7 @@ document.addEventListener('change', async (ev) => {
       render();
     } else if (t.dataset.skill) {
       const skill = availableSkills().find((s) => s.id === t.dataset.skill);
-      if (t.checked && skill?.readingLevel === 'single') selected.clear();
+      if (t.checked && skill?.readingLevel === 'single') availableSkills().filter(s => s.readingLevel !== 'single').forEach(s => selected.delete(s.id));
       else if (t.checked)
         availableSkills()
           .filter((s) => s.readingLevel === 'single')

@@ -40,6 +40,8 @@ const modules = [];
 for (const name of [
   'domain.js',
   'classroom.js',
+  'completion.js',
+  'lesson-assessment.js',
   'drive-config.js',
   'drive-storage.js',
   'storage.js',
@@ -91,4 +93,5 @@ for (const name of ['xlsx', 'fflate']) {
 }
 await writeFile(resolve(out, 'Al-Musaed-Desktop.html'), html);
 console.log('Portable desktop HTML built; all assets and curriculum embedded.');
+
 

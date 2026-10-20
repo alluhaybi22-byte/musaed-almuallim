@@ -64,7 +64,7 @@ try {
     .filter({ hasText: 'قارئ الدرس' })
     .getByRole('button', { name: 'بدء اختبار', exact: true })
     .click();
-  assert.equal(await page.locator('#setup-lesson option').count(), 3);
+  assert.equal(await page.locator('#setup-lesson option').count(), 4);
   await page.locator('#setup-lesson').selectOption('g2-u1-l2');
   await page.locator('.setup-custom').evaluate(el=>el.open=true);
   await page.locator('[data-skill$="-passages"]').check();
@@ -214,3 +214,4 @@ async function contextOfflineCheck() {
     (await page.locator('.badge.blue').innerText()).includes('عذرًا يا جدي'),
   );
 }
+
