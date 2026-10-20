@@ -1,6 +1,7 @@
 import { splitTasks } from './task-cards.js';
 import { listeningCards } from './listening.js';
-// أمثلة جديدة للمساعد، وليست نصوصًا منسوخة من الكتب. التصحيح يدوي.
+import { lessonReadingCards } from './reading-lessons.js';
+// العينات العامة من إعداد المساعد؛ مقتطفات دروس القراءة موثقة في reading-lessons.js. التصحيح يدوي.
 const words = ['كِتَابٌ', 'قَلَمٌ', 'مُعَلِّمٌ', 'مَدْرَسَةٌ', 'صَدِيقٌ'];
 const texts = [
   [
@@ -32,6 +33,7 @@ const unitWords = {
   5: ['غَسَلَ', 'ثَمَر', 'ظِلّ', 'هَدَف', 'لَعِبَ'],
 };
 export function questionsFor(skill) {
+  if (skill.kind === 'lesson-reading') return lessonReadingCards(skill);
   if (skill.kind === 'listening') {
     const cards = listeningCards(skill);
     if (cards) return cards;
@@ -665,3 +667,4 @@ function baseQuestionsFor(skill) {
     return card;
   });
 }
+
