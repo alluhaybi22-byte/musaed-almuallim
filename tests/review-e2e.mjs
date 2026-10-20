@@ -200,6 +200,7 @@ try {
   await page.locator('.secondary-details').evaluateAll(xs=>xs.forEach(el=>el.open=true));
   await page.locator('#result-query').fill('عينة مراجعة');
   assert.equal(await page.locator('.result-row').count(), 2);
+  await page.locator('.result-filter-details').evaluate(el=>el.open=true);
   await page.locator('#result-semester').selectOption('2');
   assert.equal(await page.locator('.result-row').count(), 0);
   await page.locator('#result-semester').selectOption('');

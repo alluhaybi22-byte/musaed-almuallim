@@ -68,7 +68,7 @@ let state,
   busy = false,
   pendingUpdate = null;
 let studentDisplay = false;
-let currentSessionId = '', lastJudgement = null, setupAdvanced = false;
+let currentSessionId = '', lastJudgement = null, setupAdvanced = false, resultFiltersOpen = false;
 const PREF_KEY = 'al-musaed-classroom-v1';
 let classroomPreferences = {sections: {}, setups: {}};
 try {
@@ -450,7 +450,7 @@ function assessment() {
   }
   const session = active.sessionId ? sessionRows(state, active.sessionId) : [];
   const completedCount = session.filter(x => x.result).length;
-  const sessionProgress = session.length ? '<p class="session-progress">تم تقييم ' + ar(completedCount) + ' من ' + ar(session.length) + ' · الشعبة ' + e(active.sectionAtTest || '') + '</p>' : '';
+  const sessionProgress = session.length ? '<div class="session-progress">تم تقييم ' + ar(completedCount) + ' من ' + ar(session.length) + ' · الشعبة ' + e(active.sectionAtTest || '') + '</div>' : '';
   const c = active.cards[cardIndex],
     answer = active.answers[c.id],
     pct = Math.round((100 * (cardIndex + 1)) / active.cards.length);
@@ -507,7 +507,7 @@ function resultsView() {
     const record = anchor?.result || anchor?.draft;
     return '<div class="student-row"><div><strong>' + e(record?.cards[0]?.lessonTitle || record?.cards[0]?.skillTitle || 'جلسة اختبار') + '</strong><small> · الشعبة ' + e(record?.sectionAtTest || '') + ' · ' + (record ? date(record.startedAt) : '') + '</small><p class="muted">' + ar(rows.filter(x => x.result).length) + ' من ' + ar(rows.length) + ' طالبًا</p></div>' + btn('فتح الجلسة', 'open-session', 'small', 'data-id="' + e(id) + '"') + '</div>';
   }).join('');
-  return `${heading('نتائج التشخيص', 'ابحث عن الطالب وحدد نطاق الاختبارات.', btn(icon('print') + ' تقرير الصف', 'class-report', 'secondary'))}${gradeTabs()}${sessionList ? '<section class="panel"><h2>جلسات الصف</h2>' + sessionList + '</section>' : ''}<details class="secondary-details"><summary>تصفية النتائج</summary>${resultFilterHTML()}</details><div id="filtered-results">${rs.length ? resultRows(rs) : empty('لا توجد نتائج في هذا النطاق', 'غيّر المرشحات أو ابدأ اختبارًا جديدًا.')}</div>`;
+  return `${heading('نتائج التشخيص', 'ابحث عن الطالب وحدد نطاق الاختبارات.', btn(icon('print') + ' تقرير الصف', 'class-report', 'secondary'))}${gradeTabs()}${sessionList ? '<section class="panel"><h2>جلسات الصف</h2>' + sessionList + '</section>' : ''}<details class="secondary-details result-filter-details" ${resultFiltersOpen ? 'open' : ''}><summary>تصفية النتائج</summary>${resultFilterHTML()}</details><div id="filtered-results">${rs.length ? resultRows(rs) : empty('لا توجد نتائج في هذا النطاق', 'غيّر المرشحات أو ابدأ اختبارًا جديدًا.')}</div>`;
 }
 function backupNotice() {
   if (!state.students.length && !state.results.length) return '';
@@ -570,6 +570,8 @@ function settingsView() {
  <div class="settings-grid"><form id="settings-form" class="panel"><h2>المدرسة والتقارير</h2><div class="form-grid"><label class="span2">اسم المدرسة<input name="school" value="${e(s.school)}" maxlength="150"></label><label>اسم المعلم<input name="teacher" value="${e(s.teacher)}" maxlength="150"></label><label>اسم المدير<input name="principal" value="${e(s.principal)}" maxlength="150"></label><label class="span2">اسم الموقّع أسفل التقرير<input name="signature" value="${e(s.signature)}" placeholder="يترك مكان التوقيع اليدوي أسفل التقرير" maxlength="150"></label></div><div class="divider"></div><details class="secondary-details"><summary>إعدادات التقييم المتقدمة</summary><h2>حدود تصنيف نسبة الإتقان</h2><div class="form-grid"><label>متقن من نسبة<input name="mastery" type="number" min="1" max="100" required value="${s.mastery}"></label><label>متوسط من نسبة<input name="medium" type="number" min="0" max="99" required value="${s.medium}"></label><label>الحد الأدنى للعينات<input name="minSamples" type="number" min="1" max="50" step="1" required value="${s.minSamples}"></label><label>حجم بطاقة القراءة<input name="fontSize" type="number" min="36" max="120" required value="${s.fontSize}"></label></div><div class="notice">حدود تشخيصية مقترحة وليست لائحة تقويم رسمية. يحتفظ كل اختبار بالحدود التي أُجري بها.</div></details><button class="btn" type="submit">حفظ الإعدادات</button></form><div><section class="panel"><h2>نسخة تحفظ عملك</h2><p id="last-backup">آخر تصدير: ${s.lastBackupAt ? date(s.lastBackupAt) : 'لم يُصدّر بعد'}</p><p class="muted">الطلاب والنتائج على هذا المتصفح والجهاز. صدّر نسخة احتياطية بانتظام، وانقلها لجهازك الآخر عند الحاجة.</p><div class="row" style="margin-top:18px">${btn(icon('download') + ' تصدير نسخة', 'backup', 'secondary')}${btn(icon('restore') + ' استعادة نسخة', 'restore', 'secondary')}</div><input type="file" id="restore-file" accept=".json,application/json" hidden><div class="notice">الاستعادة تدمج السجلات وتحتفظ بالبيانات الموجودة. لا تُرفع النسخة إلى خادم.</div>${btn('طلب حفظ دائم على الجهاز', 'persist-storage', 'ghost small')}</section><section class="panel"><h2>عن التطبيق</h2><p>المساعد · مساعد المعلم</p><p class="muted">لغتي للصفوف الأولية · الإصدار ${VERSION}</p><p class="muted">${ar(curriculum.units.length)} وحدة · ${ar(curriculum.skills.length)} بند مهارة مع فروع القراءة والكتابة.</p><small>المصدر: كتب لغتي المرفوعة بطبعة ١٤٤٨. قراءة دروس الصف الثاني تستخدم مقتطفات من الدرس المحدد، والمهارات العامة تستخدم أمثلة المساعد. يمكن مراجعة العينات وتعديلها قبل الاختبار.</small></section></div></div>`;
 }
 function render() {
+  const existingFilters = app.querySelector('.result-filter-details');
+  if (existingFilters) resultFiltersOpen = existingFilters.open;
   if (route === 'setup') rememberClassroom();
   const oldAudio = app.querySelector('#listening-audio');
   const wasPlaying = oldAudio && !oldAudio.paused && !oldAudio.ended;

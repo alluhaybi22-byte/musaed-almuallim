@@ -1,4 +1,5 @@
 export async function prepareAction(page, name) {
+  if (name === 'استكمال') await page.locator('.secondary-details').evaluateAll(xs => xs.forEach(el => el.open = true));
   if (['add-student','إضافة طالب'].includes(name) && !(await page.locator('[data-action="add-student"]:visible').count()))
     await page.locator('.nav [data-route="students"]').click();
   if (await page.locator('.setup-custom').count()) {

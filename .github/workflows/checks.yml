@@ -15,17 +15,16 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:classroom
-      - run: npm run test:e2e
-      - run: npm run test:review
-      - run: npm run test:import
-      - run: npm run test:drive
-      - run: npm run test:listening
-      - run: npm run test:reading
-      - run: npm run test:single
-      - run: npm run test:controls
-      - run: npm run test:auto
-      - run: npm run test:portable
+      - name: Browser regression suites
+        shell: bash
+        run: |
+          failed=0
+          for suite in classroom e2e review import drive listening reading single controls auto portable; do
+            if ! npm run "test:$suite"; then
+              failed=1
+            fi
+          done
+          exit "$failed"
       - run: npm run build
 
       - name: Build independent desktop copy
