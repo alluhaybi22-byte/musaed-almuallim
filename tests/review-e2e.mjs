@@ -156,7 +156,7 @@ try {
       await page.locator('.assessment-options > summary').click();
       await page.locator('#answer-note').fill('تدريب على الشمسية');
     }
-    await score(i >= 5 && i <= 7 ? 'غير متقن' : 'متقن');
+    await score(i >= 5 && i <= 7 ? 'غير مجتاز' : 'متمكن');
   }
   await click('حفظ نتيجة الاختبار');
   await page
@@ -171,7 +171,7 @@ try {
   );
   await close();
   await startSolar();
-  for (let i = 0; i < 10; i++) await score('متقن');
+  for (let i = 0; i < 10; i++) await score('متمكن');
   await click('حفظ نتيجة الاختبار');
   await page
     .getByRole('heading', { name: 'تقرير الطالب', exact: true })
@@ -312,7 +312,7 @@ try {
       assert(!(await page.locator('body').innerText()).includes('كِتَابٌ'));
       await click('العودة للمعلم');
     }
-    await score(i < 5 ? 'متقن' : 'غير متقن');
+    await score(i < 5 ? 'متمكن' : 'غير مجتاز');
   }
   await click('حفظ نتيجة الاختبار');
   assert((await page.locator('#report').innerText()).includes('٥٠٪'));

@@ -47,7 +47,7 @@ async function click(name) {
     await page
       .locator(".assessment-options")
       .evaluate((el) => (el.open = true));
-  const before = ["متقن", "غير متقن", "بمساعدة", "السابقة", "التالية"].includes(
+  const before = ["متمكن", "غير مجتاز", "بمساعدة", "السابقة", "التالية"].includes(
     name,
   )
     ? await page.locator(".assessment-body .row.between small").textContent()
@@ -126,7 +126,7 @@ try {
   await click("بدء الاختبار");
   await page.locator(".stimulus").waitFor();
   await screenshot("assessment-desktop");
-  await page.getByRole("button", { name: "متقن", exact: true }).dblclick();
+  await page.getByRole("button", { name: "متمكن", exact: true }).dblclick();
   await page.locator(".stimulus").filter({ hasText: "ب" }).waitFor();
   assert.ok((await page.locator(".stimulus").textContent()).includes("ب"));
   await click("بمساعدة");
@@ -136,10 +136,10 @@ try {
   await click("استكمال");
   await click("السابقة");
   await click("السابقة");
-  await click("غير متقن");
+  await click("غير مجتاز");
   await click("التالية");
   for (let i = 2; i < 6; i++) {
-    await click("متقن");
+    await click("متمكن");
   }
   await page.getByRole("heading", { name: "مراجعة الاختبار" }).waitFor();
   await page.locator("#final-note").fill("تحتاج الفتحة إلى تدريب إضافي.");
@@ -163,7 +163,7 @@ try {
     await page.locator('.score-btn[aria-pressed="true"]').count(),
     0,
   );
-  for (let i = 0; i < 6; i++) await click("متقن");
+  for (let i = 0; i < 6; i++) await click("متمكن");
   await click("حفظ نتيجة الاختبار");
   await page.getByRole("dialog").waitFor();
   assert.ok((await page.locator("#report").innerText()).includes("١٠٠٪"));
@@ -172,7 +172,7 @@ try {
     await page.locator(".assessment-head h1").textContent(),
     "طالب وورد",
   );
-  for (let i = 0; i < 6; i++) await click("متقن");
+  for (let i = 0; i < 6; i++) await click("متمكن");
   await click("حفظ نتيجة الاختبار");
   await page.getByText("آخر طالب في هذا الكشف", { exact: true }).waitFor();
   assert.equal(await page.locator('[data-action="next-student"]').count(), 0);
@@ -262,3 +262,4 @@ try {
   await browser.close();
   server.kill();
 }
+

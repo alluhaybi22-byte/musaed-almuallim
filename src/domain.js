@@ -1,4 +1,4 @@
-export const VERSION = '0.8.0';
+export const VERSION = '0.9.0';
 export const GRADES = [1, 2, 3];
 export const GRADE_NAMES = {
   1: 'الأول الابتدائي',
@@ -6,9 +6,12 @@ export const GRADE_NAMES = {
   3: 'الثالث الابتدائي',
 };
 export const SCORES = {
+  excellent: 'متفوق',
+  advanced: 'متقدم',
+  proficient: 'متمكن',
   independent: 'متقن',
   assisted: 'بمساعدة',
-  incorrect: 'غير متقن',
+  incorrect: 'غير مجتاز',
   not_assessed: 'غير مقيم',
   not_taught: 'غير مدرس',
 };
@@ -76,7 +79,10 @@ export function summarize(cards, answers, settings = DEFAULT_SETTINGS) {
       });
     const g = groups.get(card.skillId),
       score = answers[card.id]?.score;
-    g[Object.hasOwn(SCORES, score) ? score : 'not_assessed']++;
+    const counted = ['excellent', 'advanced', 'proficient'].includes(score)
+      ? 'independent'
+      : score;
+    g[Object.hasOwn(SCORES, counted) ? counted : 'not_assessed']++;
   }
   return [...groups.values()].map((g) => {
     const attempted = g.independent + g.assisted + g.incorrect;
@@ -159,7 +165,7 @@ export function skillProgress(result, results) {
                 .filter(
                   (c) =>
                     c.skillId === current.skillId &&
-                    ['independent', 'assisted', 'incorrect'].includes(
+                    ['excellent', 'advanced', 'proficient', 'independent', 'assisted', 'incorrect'].includes(
                       r.answers[c.id]?.score,
                     ),
                 )
@@ -170,7 +176,7 @@ export function skillProgress(result, results) {
                   .filter(
                     (c) =>
                       c.skillId === current.skillId &&
-                      ['independent', 'assisted', 'incorrect'].includes(
+                      ['excellent', 'advanced', 'proficient', 'independent', 'assisted', 'incorrect'].includes(
                         result.answers[c.id]?.score,
                       ),
                   )

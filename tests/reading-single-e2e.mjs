@@ -83,7 +83,7 @@ try {
   await action('start-assessment');
   const first = await text();
   assert.equal(first.trim().split(/\s+/).length, 6);
-  await page.getByRole('button', { name: 'متقن', exact: true }).click();
+  await page.getByRole('button', { name: 'متمكن', exact: true }).click();
   await action('finish');
   assert((await page.locator('#report').innerText()).includes('١٠٠٪'));
   await action('next-student');
@@ -94,13 +94,13 @@ try {
   await page.reload();
   await action('resume');
   assert.equal(await text(), second);
-  await page.getByRole('button', { name: 'غير متقن', exact: true }).click();
+  await page.getByRole('button', { name: 'غير مجتاز', exact: true }).click();
   await action('finish');
   await action('next-student');
   const third = await text();
   assert.notEqual(second, third);
   assert.notEqual(first, third);
-  await page.getByRole('button', { name: 'متقن', exact: true }).click();
+  await page.getByRole('button', { name: 'متمكن', exact: true }).click();
   await action('finish');
   await page.locator('#report').waitFor();
   assert((await page.locator('#dialog-root').innerText()).includes('آخر طالب'));

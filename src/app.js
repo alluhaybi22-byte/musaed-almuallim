@@ -58,6 +58,7 @@ let state,
   busy = false,
   pendingUpdate = null;
 let studentDisplay = false;
+let assessmentBusy = false;
 let driveBusy = false, drivePreparing = false, driveFiles = [], driveNextPage = '', driveMessage = '', pendingDriveBackup = null;
 const drive = createDriveStorage({ clientId: GOOGLE_DRIVE_CLIENT_ID, onChange: () => refreshDrivePanel() });
 let resultFilters = { query: '', semester: '', from: '', to: '', section: '' };
@@ -291,7 +292,7 @@ function assessment() {
     return `<section class="student-display"><div class="row between"><small>مهارة الاستماع</small>${btn('العودة للمعلم', 'student-display', 'secondary small')}</div><div class="prompt-card"><div class="stimulus">استمع جيدًا، ثم أجب شفهيًا.</div><p>استمع إلى المقطع، ثم أجب عن أسئلة المعلم.</p>${listeningPlayer(c) || '<p>يقرأ المعلم النص بصوته.</p>'}</div></section>`;
   if (studentDisplay)
     return `<section class="student-display"><div class="row between"><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small>${btn('العودة للمعلم', 'student-display', 'secondary small')}</div><div class="prompt-card"><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div></section>`;
-  return `<section class="assessment-body"><div class="assessment-head"><div><h1>${e(student?.name || 'الطالب')}</h1><p>${GRADE_NAMES[active.grade]} · الفصل ${ar(active.semester)} · ${e(c.domain)}</p></div><div class="row">${btn('عرض الطالب', 'student-display', 'secondary small')}${btn('حفظ واستكمال لاحقًا', 'pause', 'secondary small')}</div></div><div class="row between"><span class="badge blue">${e(c.skillTitle)}${c.facet ? ' · ' + e(c.facet) : ''}</span><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small></div><div class="progress"><i style="width:${pct}%"></i></div><div class="prompt-card"><small>المهمة</small><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div><div class="grading">${['independent', 'incorrect'].map((k) => `<button class="score-btn ${answer?.score === k ? 'selected' : ''}" data-action="score" data-score="${k}" aria-pressed="${answer?.score === k}">${SCORES[k]}</button>`).join('')}</div><details class="assessment-options"><summary>خيارات التقييم والملاحظات</summary><div class="row between"><div class="row">${['assisted', 'not_assessed', 'not_taught'].map((k) => btn(SCORES[k], 'score', 'ghost small', 'data-score="' + k + '" aria-pressed="' + (answer?.score === k) + '"')).join('')}</div><div class="font-controls"><label for="font-size">حجم العرض</label><input id="font-size" type="range" min="36" max="120" value="${state.settings.fontSize}"></div></div><details class="teacher-hint"><summary>دليل المعلم والإجابة المتوقعة</summary>${c.teacherText ? `<p class="teacher-text">${e(c.teacherText)}</p>` : ''}<p>${e(c.expected)}</p><small>طبعة ${e(c.source.edition)} · ${c.kind === 'lesson-reading' ? e(readingCardSourceLabel(c)) : 'دليل الوحدة ص ' + ar(c.source.page) + ' · العينة من إعداد المساعد'}</small>${btn('تعديل هذه البطاقة', 'edit-active-card', 'ghost small')}</details><label class="assessment-note">ملاحظة على هذه البطاقة<textarea id="answer-note" placeholder="اختياري">${e(answer?.note || '')}</textarea></label></details><div class="assessment-tools">${btn(icon('back') + ' السابقة', 'previous', 'secondary', cardIndex === 0 ? 'disabled' : '')}${btn('مراجعة الاختبار', 'review', 'ghost')}${btn(cardIndex === active.cards.length - 1 ? 'مراجعة وحفظ' : 'التالية ' + icon('arrow'), 'next')}</div></section>`;
+  return `<section class="assessment-body"><div class="assessment-head"><div><h1>${e(student?.name || 'الطالب')}</h1><p>${GRADE_NAMES[active.grade]} · الفصل ${ar(active.semester)} · ${e(c.domain)}</p></div><div class="row">${btn('عرض الطالب', 'student-display', 'secondary small')}${btn('تجاوز الطالب', 'skip-student', 'secondary small')}${btn('حفظ واستكمال لاحقًا', 'pause', 'secondary small')}</div></div><div class="row between"><span class="badge blue">${e(c.skillTitle)}${c.facet ? ' · ' + e(c.facet) : ''}</span><small>البطاقة ${ar(cardIndex + 1)} من ${ar(active.cards.length)}</small></div><div class="progress"><i style="width:${pct}%"></i></div><div class="prompt-card"><small>المهمة</small><p class="instruction">${e(c.instruction)}</p><div class="stimulus ${c.display.length > 45 ? 'long' : ''}" style="--stimulus-size:${state.settings.fontSize}px">${e(c.display)}</div></div><div class="grading">${['excellent', 'advanced', 'proficient', 'incorrect'].map((k, i) => `<button class="score-btn ${answer?.score === k ? 'selected' : ''}" data-action="score" data-score="${k}" aria-label="${SCORES[k]}" aria-keyshortcuts="${i + 1}" aria-pressed="${answer?.score === k}">${i + 1} · ${SCORES[k]}</button>`).join('')}</div><p class="muted">التقييم: 1 متفوق · 2 متقدم · 3 متمكن · 4 غير مجتاز. النسبة تحسب البنود المجتازة؛ التقديرات الثلاثة الأولى مجتازة دون أوزان رقمية.</p><details class="assessment-options"><summary>خيارات التقييم والملاحظات</summary><div class="row between"><div class="row">${['assisted', 'not_assessed', 'not_taught'].map((k) => btn(SCORES[k], 'score', 'ghost small', 'data-score="' + k + '" aria-pressed="' + (answer?.score === k) + '"')).join('')}</div><div class="font-controls"><label for="font-size">حجم العرض</label><input id="font-size" type="range" min="36" max="120" value="${state.settings.fontSize}"></div></div><details class="teacher-hint"><summary>دليل المعلم والإجابة المتوقعة</summary>${c.teacherText ? `<p class="teacher-text">${e(c.teacherText)}</p>` : ''}<p>${e(c.expected)}</p><small>طبعة ${e(c.source.edition)} · ${c.kind === 'lesson-reading' ? e(readingCardSourceLabel(c)) : 'دليل الوحدة ص ' + ar(c.source.page) + ' · العينة من إعداد المساعد'}</small>${btn('تعديل هذه البطاقة', 'edit-active-card', 'ghost small')}</details><label class="assessment-note">ملاحظة على هذه البطاقة<textarea id="answer-note" placeholder="اختياري">${e(answer?.note || '')}</textarea></label></details><div class="assessment-tools">${btn(icon('back') + ' السابقة', 'previous', 'secondary', cardIndex === 0 ? 'disabled' : '')}${btn('مراجعة الاختبار', 'review', 'ghost')}${btn(cardIndex === active.cards.length - 1 ? 'مراجعة وحفظ' : 'التالية ' + icon('arrow'), 'next')}</div></section>`;
 }
 function resultRows(rs) {
   return `<div class="results-list">${rs
@@ -692,7 +693,7 @@ function detailedReportHTML(r) {
   );
   const facets = facetSummary(r);
   const progress = skillProgress(r, state.results);
-  return `${facets.length ? `<h3>تفصيل الظواهر</h3><table><thead><tr><th>الفرع</th><th>نسبة الإتقان</th><th>ملاحظة</th></tr></thead><tbody>${facets.map((x) => `<tr><td>${e(x.title)}</td><td>${x.percent === null ? '—' : ar(x.percent) + '٪'}</td><td>${x.limited ? 'عينة محدودة تحتاج تحققًا' : ''}</td></tr>`).join('')}</tbody></table>` : ''}<h3>بنود تحتاج تدريبًا</h3>${failures.length ? `<table class="item-details"><thead><tr><th>المهارة والعينة</th><th>المهمة ومعيار الحكم</th><th>الحكم</th><th>ملاحظة المعلم</th></tr></thead><tbody>${failures.map((c) => `<tr><td>${e(c.skillTitle)}${c.facet ? ' · ' + e(c.facet) : ''}<br>${e(c.teacherText || c.display)}</td><td>${e(c.instruction)}<br><small>${e(c.expected)}</small></td><td>${e(SCORES[r.answers[c.id].score])}</td><td>${e(r.answers[c.id].note || '')}</td></tr>`).join('')}</tbody></table>` : '<p>لم تسجل إجابات خاطئة أو بمساعدة في البنود المقيمة.</p>'}${trainingPlanHTML(r)}<h3>متابعة نفس المهارة والعينات</h3><table><thead><tr><th>المهارة</th><th>السابقة</th><th>الحالية</th><th>التغير</th></tr></thead><tbody>${progress.map((x) => `<tr><td>${e(x.title)}</td><td>${x.previousPercent === null ? 'لا توجد نتيجة مطابقة' : ar(x.previousPercent) + '٪ · ' + date(x.previousAt)}</td><td>${x.percent === null ? '—' : ar(x.percent) + '٪'}</td><td>${x.delta === null ? '—' : (x.delta > 0 ? '+' : '') + ar(x.delta) + ' نقطة مئوية'}</td></tr>`).join('')}</tbody></table><p class="report-note">تُحسب المقارنة فقط عند تطابق العينات والمهمات والمعايير والبنود المقيمة. اختلاف العينات يحتاج قراءة النتائج كلٌّ على حدة.</p>`;
+  return `${facets.length ? `<h3>تفصيل الظواهر</h3><table><thead><tr><th>الفرع</th><th>نسبة الإتقان</th><th>ملاحظة</th></tr></thead><tbody>${facets.map((x) => `<tr><td>${e(x.title)}</td><td>${x.percent === null ? '—' : ar(x.percent) + '٪'}</td><td>${x.limited ? 'عينة محدودة تحتاج تحققًا' : ''}</td></tr>`).join('')}</tbody></table>` : ''}<h3>تقديرات بنود الاختبار</h3><table><thead><tr><th>المهمة</th><th>التقدير</th></tr></thead><tbody>${r.cards.map(c => `<tr><td>${e(c.display)}</td><td>${e(SCORES[r.answers[c.id]?.score] || SCORES.not_assessed)}</td></tr>`).join('')}</tbody></table><h3>بنود تحتاج تدريبًا</h3>${failures.length ? `<table class="item-details"><thead><tr><th>المهارة والعينة</th><th>المهمة ومعيار الحكم</th><th>الحكم</th><th>ملاحظة المعلم</th></tr></thead><tbody>${failures.map((c) => `<tr><td>${e(c.skillTitle)}${c.facet ? ' · ' + e(c.facet) : ''}<br>${e(c.teacherText || c.display)}</td><td>${e(c.instruction)}<br><small>${e(c.expected)}</small></td><td>${e(SCORES[r.answers[c.id].score])}</td><td>${e(r.answers[c.id].note || '')}</td></tr>`).join('')}</tbody></table>` : '<p>لم تسجل إجابات خاطئة أو بمساعدة في البنود المقيمة.</p>'}${trainingPlanHTML(r)}<h3>متابعة نفس المهارة والعينات</h3><table><thead><tr><th>المهارة</th><th>السابقة</th><th>الحالية</th><th>التغير</th></tr></thead><tbody>${progress.map((x) => `<tr><td>${e(x.title)}</td><td>${x.previousPercent === null ? 'لا توجد نتيجة مطابقة' : ar(x.previousPercent) + '٪ · ' + date(x.previousAt)}</td><td>${x.percent === null ? '—' : ar(x.percent) + '٪'}</td><td>${x.delta === null ? '—' : (x.delta > 0 ? '+' : '') + ar(x.delta) + ' نقطة مئوية'}</td></tr>`).join('')}</tbody></table><p class="report-note">تُحسب المقارنة فقط عند تطابق العينات والمهمات والمعايير والبنود المقيمة. اختلاف العينات يحتاج قراءة النتائج كلٌّ على حدة.</p>`;
 }
 
 function reportModal(html, kind, id = '') {
@@ -769,7 +770,9 @@ document.addEventListener('click', async (event) => {
   if (!t || t.disabled) return;
   event.preventDefault();
   const a = t.dataset.action;
-  if (busy || (a === 'score' && event.detail > 1)) return;
+  if (busy || assessmentBusy || (a === 'score' && event.detail > 1)) return;
+  const assessmentMutation = ['score', 'skip-student', 'next-student', 'finish'].includes(a);
+  if (assessmentMutation) assessmentBusy = true;
   try {
     if (a === 'nav') {
       if (active && route === 'assessment') {
@@ -1018,8 +1021,22 @@ document.addEventListener('click', async (event) => {
       nav('results');
       toast('حُفظت نتيجة الاختبار.');
       reportModal(studentReportHTML(result), 'student', result.id);
-    } else if (a === 'next-student') {
-      const result = state.results.find((r) => r.id === t.dataset.id);
+     } else if (a === 'next-student' || a === 'skip-student') {
+      const skipping = a === 'skip-student';
+      if (skipping && (!active || studentDisplay)) return;
+      if (skipping) {
+        if (review) active.note = document.querySelector('#final-note')?.value || active.note;
+        else await saveCurrentNote();
+        await saveDraft();
+      }
+      const result = skipping ? structuredClone(active) : state.results.find((r) => r.id === t.dataset.id);
+      if (skipping && !nextRosterStudent(state.students, result)) {
+        active = null;
+        review = false;
+        nav('home');
+        toast('آخر طالب في الكشف؛ حُفظ اختباره كمسودة دون تسجيل نتيجة.');
+        return;
+      }
       const next = result && nextRosterStudent(state.students, result);
       if (!next) throw Error('لا يوجد طالب تالٍ في هذا الكشف.');
       active = {
@@ -1046,6 +1063,7 @@ document.addEventListener('click', async (event) => {
       closeModal();
       route = 'assessment';
       render();
+      if (skipping) toast('تم تجاوز الطالب وحفظ اختباره للاستكمال لاحقًا.');
     } else if (a === 'student-report') {
       const r = state.results.find((r) => r.id === t.dataset.id);
       reportModal(studentReportHTML(r), 'student', r.id);
@@ -1205,6 +1223,8 @@ document.addEventListener('click', async (event) => {
   } catch (error) {
     console.error(error);
     toast(error.message || 'تعذر تنفيذ العملية.');
+  } finally {
+    if (assessmentMutation) assessmentBusy = false;
   }
 });
 async function saveCurrentNote() {
@@ -1500,7 +1520,20 @@ document.addEventListener('input', (ev) => {
   }
 });
 document.addEventListener('keydown', (ev) => {
-  if (!dialogs.children.length) return;
+  if (!dialogs.children.length) {
+    if (route !== 'assessment' || !active || review || studentDisplay || busy || assessmentBusy ||
+        ev.repeat || ev.ctrlKey || ev.metaKey || ev.altKey || ev.shiftKey ||
+        ev.isComposing || ev.target.closest('input, textarea, select, [contenteditable]')) return;
+    const index = '1234'.indexOf(ev.key);
+    const arabicIndex = '١٢٣٤'.indexOf(ev.key);
+    const score = ['excellent', 'advanced', 'proficient', 'incorrect'][index < 0 ? arabicIndex : index];
+    const button = score && app.querySelector('[data-action="score"][data-score="' + score + '"]');
+    if (button) {
+      ev.preventDefault();
+      button.click();
+    }
+    return;
+  }
   if (ev.key === 'Escape') {
     closeModal();
     return;

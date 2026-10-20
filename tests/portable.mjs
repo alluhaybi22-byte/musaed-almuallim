@@ -12,7 +12,7 @@ try{
  await page.locator('[data-action="open-grade"][data-grade="1"]').click();await page.getByRole('button',{name:'إضافة طالب',exact:true}).first().click();
  await page.getByLabel('اسم الطالب',{exact:true}).fill('طالب نسخة الكمبيوتر');await page.getByRole('button',{name:'حفظ الطالب',exact:true}).click();await page.getByText('طالب نسخة الكمبيوتر',{exact:true}).waitFor();
  await page.getByRole('button',{name:'بدء اختبار',exact:true}).click();await page.getByRole('button',{name:'إلغاء الكل',exact:true}).click();await page.locator('[data-skill$="-fatha"]').first().check();await page.getByRole('button',{name:'بدء الاختبار',exact:true}).click();
- for(let i=0;i<6;i++){const before=await page.locator('.assessment-body .row.between small').textContent();await page.getByRole('button',{name:'متقن',exact:true}).click();await page.waitForFunction(old=>document.querySelector('.assessment-body .row.between small')?.textContent!==old,before);}
+ for(let i=0;i<6;i++){const before=await page.locator('.assessment-body .row.between small').textContent();await page.getByRole('button',{name:'متمكن',exact:true}).click();await page.waitForFunction(old=>document.querySelector('.assessment-body .row.between small')?.textContent!==old,before);}
  await page.getByRole('button',{name:'حفظ نتيجة الاختبار',exact:true}).click();await page.getByRole('dialog').waitFor();assert.ok((await page.locator('#report').innerText()).includes('١٠٠٪'));
  await page.reload();await page.getByRole('heading',{name:'مساحة معلمك'}).waitFor();assert.equal(await page.locator('.metric strong').nth(0).textContent(),'١');assert.equal(await page.locator('.metric strong').nth(1).textContent(),'١');
  assert.deepEqual(errors,[]);assert.deepEqual(network,[]);console.log('PASS: desktop file opens directly, performs assessment, retains data after reload and makes no network requests.');
@@ -29,3 +29,4 @@ try{
  assert.deepEqual(errors,[]);assert.deepEqual(network,[]);
  console.log('PASS: portable narration is embedded and decodes without any external requests.');
 }finally{await browser.close();}
+
