@@ -19,20 +19,27 @@
       "failed item details and notes",
       "matched-material progress comparison",
       "student-only view",
-      "printable training plan grouped by observed skill difficulties"
+      "printable training plan grouped by observed skill difficulties",
+      "four persisted performance ratings",
+      "keyboard grading 1–4 and Arabic digits",
+      "skip student preserves draft",
+      "last student skip ends without false result",
+      "typing dialog and student-view shortcut guards"
     ],
     "description": "Complete a six-card first-grade fatha test, change a judgement and verify the saved report after reload.",
     "steps": [
       "Open الصف الأول and add تجربة التشخيص followed by طالب تالٍ, both in section أ. Start تجربة التشخيص.",
       "Clear skills with إلغاء الكل and select only the unit 1 fatha letter skill, then begin the six-card assessment.",
       "Before grading, open عرض الطالب. Only the prompt and العودة للمعلم appear; no answers, teacher guide or grading controls are exposed. Return to the teacher view.",
-      "Click متقن on the first card and confirm the second appears automatically. Open خيارات التقييم والملاحظات and click بمساعدة on the second and confirm the third appears automatically. Save for later and reload.",
-      "Resume and return twice using السابقة to the first card. Change it with غير متقن; this automatically advances to card two. Its prior judgement remains. Use التالية once to return to card three.",
-      "Grade the remaining four cards متقن, without clicking التالي between judgements. The last judgement automatically opens review. Add note تدريب إضافي and save.",
+      "Click متمكن on the first card and confirm the second appears automatically. Open خيارات التقييم والملاحظات and click بمساعدة on the second and confirm the third appears automatically. Save for later and reload.",
+      "Resume and return twice using السابقة to the first card. Change it with غير مجتاز; this automatically advances to card two. Its prior judgement remains. Use التالية once to return to card three.",
+      "Grade the remaining four cards متمكن, without clicking التالي between judgements. The last judgement automatically opens review. Add note تدريب إضافي and save.",
       "The report shows ٦٧٪ and متوسط. Export its CSV and verify the print/PDF action remains available.",
-      "Click الطالب التالي: طالب تالٍ. Its name and same first letter appear with no old judgements. Grade all six cards متقن and save; its report shows ١٠٠٪ and آخر طالب في هذا الكشف.",
+      "Click الطالب التالي: طالب تالٍ. Its name and same first letter appear with no old judgements. Grade all six cards متمكن and save; its report shows ١٠٠٪ and آخر طالب في هذا الكشف.",
       "Reload and reopen تجربة التشخيص from النتائج. Its saved report still shows ٦٧٪ with the note, independent of the next student's result.",
-      "In the saved report verify بنود تحتاج تدريبًا includes the incorrect and assisted letter cards. Locate خطة تدريب مقترحة in that report and verify it groups those actual difficulties by skill, includes an activity and recheck, and appears in the printable report without including mastered cards. Repeat the exact same six-card test for the first student with all correct answers. Its report shows comparison to the earlier 67% result; changing a sample must instead remove the matched comparison."
+      "In the saved report verify بنود تحتاج تدريبًا includes the incorrect and assisted letter cards. Locate خطة تدريب مقترحة in that report and verify it groups those actual difficulties by skill, includes an activity and recheck, and appears in the printable report without including mastered cards. Repeat the exact same six-card test for the first student with all correct answers. Its report shows comparison to the earlier 67% result; changing a sample must instead remove the matched comparison.",
+      "Create a fresh six-card test with at least two students. Press 1, 2, 3 and 4 to select متفوق, متقدم, متمكن and غير مجتاز, each advancing one card. Arabic digits ١–٤ also work. Holding a number does not grade repeated cards. Typing numbers in a note, opening an editor dialog or entering student view must not grade. Complete and save; verify the report lists each actual rating and a backup retains its distinct score key. Passing ratings count as passed items with no separate numeric weights.",
+      "In a fresh test click تجاوز الطالب: the following roster student starts with empty answers and a different sentence in quick mode. No result is created for the skipped student, whose draft remains after reload and can resume with any earlier judgements. Skip the last student: return home with a resumable draft and no false failed result."
     ],
     "expected": "One durable result shows ٦٧٪ and متوسط, previous judgement was replaced, the report and CSV are available and the saved draft is gone."
   },
@@ -183,4 +190,3 @@
     "expected": "Settings persist, invalid thresholds are rejected, the report labels untested students correctly, CSV exports and the cached app opens offline with the saved student."
   }
 ]
-

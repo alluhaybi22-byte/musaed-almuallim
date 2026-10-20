@@ -12,3 +12,9 @@ test('CSV cells prevent spreadsheet formula execution',()=>assert.equal(csvCell(
 test('invalid thresholds and malformed backup rejected',()=>{assert.throws(()=>validateSettings({mastery:50,medium:80,minSamples:5}));assert.throws(()=>validateBackup({app:'other'}));});
 test('backup merge maps matching students and keeps their results',()=>{const state=emptyState();state.students=addStudents([],[{name:'طالب',grade:1,section:'أ'}]).students;const data={app:'al-musaed',...emptyState(),students:[{...state.students[0],id:'other-id'}]};const result=mergeBackup(state,data);assert.equal(result.students.length,1);assert.equal(result.revision,0);});
 test('all 24 unit routes contain runnable assessment samples and source reference',async()=>{const c=JSON.parse(await readFile(new URL('../public/curriculum.json',import.meta.url)));assert.equal(c.units.length,24);for(const u of c.units){const ss=c.skills.filter(s=>s.grade===u.grade&&s.semester===u.semester&&s.unit===u.unit);assert.ok(ss.length>0);for(const s of ss){const q=questionsFor(s);assert.ok(q.length >= (s.kind === 'listening' && s.unit <= 3 ? 3 : 5));assert.equal(new Set(q.map(x=>x.id)).size,q.length);assert.ok(q.every(x=>x.display&&x.instruction&&x.expected&&x.source.page>0));}}});
+
+test('four rating judgements retain passing counts without numeric weights',()=>{
+  const summary=summarize(cards,{q0:{score:'excellent'},q1:{score:'advanced'},q2:{score:'proficient'},q3:{score:'incorrect'},q4:{score:'not_assessed'}});
+  assert.equal(summary[0].attempted,4);
+  assert.equal(summary[0].percent,75);
+});

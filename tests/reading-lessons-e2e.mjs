@@ -142,7 +142,7 @@ try {
   assert(
     !(await page.locator('.stimulus').innerText()).includes('تَعْدِيلٌ خَاصٌّ'),
   );
-  await button('متقن');
+  await button('متمكن');
   await page.waitForFunction(() =>
     document
       .querySelector('.assessment-body .row.between small')
@@ -154,13 +154,13 @@ try {
   assert(
     (await page.locator('.badge.blue').innerText()).includes('عذرًا يا جدي'),
   );
-  await button('غير متقن');
+  await button('غير مجتاز');
   await page.waitForFunction(() =>
     document
       .querySelector('.assessment-body .row.between small')
       ?.textContent.includes('٣'),
   );
-  await button('متقن');
+  await button('متمكن');
   await action('finish');
   await page.locator('#report').waitFor();
   const report = await page.locator('#report').innerText();

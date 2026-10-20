@@ -2,7 +2,7 @@
   "platform": "AppDeploy",
   "app_id": "app-0gwwi6",
   "url": "https://app-0gwwi6.v2.appdeploy.ai/",
-  "snapshot_version": "1792482896618",
+  "snapshot_version": "1792487151681",
   "published_on": "2026-10-20",
   "status": "ready",
   "student_storage": "local IndexedDB with optional explicit Google Drive appDataFolder backup/restore; empty initial roster",
@@ -10,15 +10,15 @@
     "local_vite_e2e": "passed",
     "platform_runtime_qa": "no frontend, network or backend errors reported",
     "roster_import_and_batch_e2e": "passed for 25 complete XLSX/XLS/DOCX names, reload and duplicate prevention",
-    "unit_tests": "46 passed",
+    "unit_tests": "47 passed",
     "private_workbook": "all 28 names reviewed, saved, reloaded and reimported without duplicates in grades 1, 2 and 3; full preview and stale search reset verified locally",
     "single_sentence": "one six-word sentence per student; three successive students get distinct sentences; saved rotation retained on reload and backup; Vite production test passed",
     "reading_lessons": "16 lessons across eight units; mobile production lesson selection, scope reset, scoring, draft/report/next student, long title and offline checks passed",
     "drive_mock_e2e": "passed; no real OAuth/Drive approval or upload tested",
-    "live_browser_check": "0.8.0 platform ready with empty runtime/QA error lists; local Vite production checks passed; real Google round trip not tested",
-    "validation_warning": "custom manifest layout/base could not be established by conservative platform check; local production offline reload passed"
+    "live_browser_check": "0.9.0 platform ready with empty runtime/QA error lists; local Vite production checks passed; real Google round trip not tested",
+    "validation_warning": "custom manifest layout/base could not be established by conservative platform check; local production offline reload passed",
+    "assessment_controls": "local and Vite production passed: skip/draft/resume/end-of-roster, four keyboard ratings, typing/student guards, saved reports and backup"
   },
   "scope": "update existing app-0gwwi6; retain URL, prior local data and unchanged assets",
-  "app_version": "0.8.0"
+  "app_version": "0.9.0"
 }
-
