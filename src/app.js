@@ -32,6 +32,8 @@ import {
   rosterFromRows,
 } from './roster-file.js';
 import { nextRosterStudent } from './domain.js';
+import { GOOGLE_DRIVE_CLIENT_ID } from './drive-config.js';
+import { createDriveStorage } from './drive-storage.js';
 
 const app = document.querySelector('#app'),
   dialogs = document.querySelector('#dialog-root');
@@ -53,6 +55,8 @@ let state,
   busy = false,
   pendingUpdate = null;
 let studentDisplay = false;
+let driveBusy = false, drivePreparing = false, driveFiles = [], driveNextPage = '', driveMessage = '', pendingDriveBackup = null;
+const drive = createDriveStorage({ clientId: GOOGLE_DRIVE_CLIENT_ID, onChange: () => refreshDrivePanel() });
 let resultFilters = { query: '', semester: '', from: '', to: '', section: '' };
 let reportScope = {
   skill: '',
@@ -325,6 +329,43 @@ function backupNotice() {
   return `<div class="notice warning backup-reminder">${last ? 'مر أسبوع على آخر تصدير للنسخة الاحتياطية.' : 'لم تُصدّر نسخة احتياطية من هذا الجهاز بعد.'} ${btn('تصدير نسخة', 'backup', 'secondary small')}</div>`;
 }
 
+function drivePanelBody() {
+  const status = drive.status();
+  const disabled = driveBusy || status.connecting ? 'disabled' : '';
+  const supported = location.protocol === 'https:' || location.hostname === 'localhost';
+  return `<h2>الحفظ في Google Drive</h2><p>احفظ نسخة من الطلاب والنتائج والمسودات والإعدادات في مساحة خاصة بالمساعد داخل حساب Google الذي تختاره. تستعيدها على جهاز آخر عند الحاجة؛ الحفظ المحلي مستمر.</p><p class="muted">هذا حفظ واستعادة للنسخ، ولا يدمج تغييرات الأجهزة تلقائيًا. لا يرفع التطبيق بياناتك حتى تضغط حفظ نسخة.</p>
+    ${!supported ? '<div class="notice">الربط متاح من رابط الويب الآمن. نسخة الكمبيوتر المحلية تواصل الحفظ والتصدير على الجهاز.</div>' : !status.configured ? '<div class="notice">لم يُفعّل ربط Google Drive لهذا الإصدار بعد. تظل بياناتك محفوظة محليًا ويمكن تصدير نسخة.</div>' : `<div class="row">${status.connected ? `${btn('حفظ نسخة على Google Drive', 'drive-save', 'secondary small', disabled)}${btn('عرض النسخ المحفوظة', 'drive-list', 'secondary small', disabled)}${btn('إنهاء جلسة Google', 'drive-disconnect', 'ghost small', disabled)}` : btn(status.connecting ? 'أكمل نافذة Google…' : status.ready ? 'ربط Google Drive' : 'تجهيز تسجيل دخول Google', 'drive-connect', 'secondary small', disabled)}</div>`}
+    <p>آخر حفظ ناجح على درايف: ${state.settings.lastDriveBackupAt ? date(state.settings.lastDriveBackupAt) : 'لم يُحفظ بعد'}</p>
+    <p role="status">${driveBusy ? 'جارٍ تنفيذ العملية…' : e(driveMessage)}</p>
+    ${status.connected && driveFiles.length ? `<h3>النسخ المحفوظة</h3><ul class="drive-backups">${driveFiles.map((file) => `<li><span>${e(file.name)} · ${e(file.createdTime ? date(file.createdTime) : '')}</span>${btn('معاينة الاستعادة', 'drive-read', 'ghost small', `data-id="${e(file.id)}" ${disabled}`)}</li>`).join('')}</ul>` : ''}
+    ${status.connected && driveNextPage ? btn('عرض نسخ أقدم', 'drive-more', 'ghost small', disabled) : ''}
+    <small>تنتهي جلسة Google عند إغلاق الصفحة أو انتهاء صلاحيتها؛ أعد الربط عند الطلب. ملفاتك تبقى في درايف.</small>`;
+}
+function refreshDrivePanel() {
+  const panel = document.querySelector('#drive-panel');
+  if (panel && state) panel.innerHTML = drivePanelBody();
+}
+function mountDrivePanel() {
+  const parent = app.querySelector('.settings-grid > div:last-child');
+  if (!parent) return;
+  parent.insertAdjacentHTML('afterbegin', '<section class="panel" id="drive-panel"></section>');
+  refreshDrivePanel();
+}
+async function driveOperation(operation) {
+  if (driveBusy) return;
+  driveBusy = true;
+  driveMessage = '';
+  refreshDrivePanel();
+  try { await operation(); }
+  catch (error) { driveMessage = error.message; toast(error.message); }
+  finally { driveBusy = false; refreshDrivePanel(); }
+}
+async function loadDriveBackups(append = false) {
+  const page = await drive.listBackups(append ? driveNextPage : '');
+  driveFiles = append ? [...driveFiles, ...page.files] : page.files;
+  driveNextPage = page.nextPageToken;
+  if (!driveFiles.length) driveMessage = 'لا توجد نسخ للمساعد في حساب Google المختار بعد.';
+}
 function settingsView() {
   const s = state.settings;
   return `${heading('إعدادات المساعد', 'بيانات المدرسة والتقييم والنسخ الاحتياطي.')}
@@ -350,6 +391,7 @@ function render() {
               ? resultsView()
               : settingsView(),
   );
+  if (route === 'settings') mountDrivePanel();
   if (route === 'assessment' && active && !review) {
     const c = active.cards[cardIndex];
     app
@@ -1022,6 +1064,55 @@ document.addEventListener('click', async (event) => {
       });
       render();
       toast('بدأ تنزيل النسخة الاحتياطية. تحقق من حفظ الملف في التنزيلات.');
+    } else if (a === 'drive-connect') {
+      if (driveBusy) return;
+      if (!drive.status().ready) {
+        if (drivePreparing) return;
+        drivePreparing = true;
+        await driveOperation(async () => {
+          try { await drive.prepare(); driveMessage = 'جاهز. اضغط ربط Google Drive لفتح نافذة الحساب.'; }
+          finally { drivePreparing = false; }
+        });
+      } else {
+        await driveOperation(async () => {
+          driveFiles = []; driveNextPage = '';
+          await drive.connect();
+          await loadDriveBackups();
+          driveMessage = 'تم ربط جلسة Google. اختر حفظ نسخة أو استعادة نسخة سابقة.';
+        });
+      }
+    } else if (a === 'drive-save') {
+      await driveOperation(async () => {
+        const snapshotRevision = state.revision;
+        const file = await drive.saveBackup(state);
+        await persist({ ...state, settings: { ...state.settings, lastDriveBackupAt: file.createdTime } });
+        driveMessage = state.revision > snapshotRevision + 1
+          ? 'حُفظت نسخة وقت بدء العملية. توجد تغييرات أحدث على هذا الجهاز تحتاج حفظ نسخة أخرى.'
+          : 'أكد Google Drive حفظ نسخة جديدة. تظل النسخ السابقة محفوظة.';
+        await loadDriveBackups();
+      });
+    } else if (a === 'drive-list' || a === 'drive-more') {
+      await driveOperation(() => loadDriveBackups(a === 'drive-more'));
+    } else if (a === 'drive-read') {
+      await driveOperation(async () => {
+        pendingDriveBackup = await drive.readBackup(t.dataset.id);
+        modal('معاينة استعادة نسخة Google Drive', `<p>تحتوي النسخة على ${ar(pendingDriveBackup.students.length)} طالب و${ar(pendingDriveBackup.results.length)} اختبار و${ar(pendingDriveBackup.drafts.length)} مسودة.</p><p>ستُضاف السجلات غير الموجودة على هذا الجهاز. السجلات والمسودات الموجودة لا تُستبدل، ولا تُحذف بياناتك المحلية.</p><label class="checkline"><input id="drive-restore-settings" type="checkbox">استعادة إعدادات المدرسة والمعلم والتقييم من النسخة أيضًا</label>`, { actions: btn('دمج النسخة مع هذا الجهاز', 'confirm-drive-restore') });
+      });
+    } else if (a === 'confirm-drive-restore') {
+      if (!pendingDriveBackup) return;
+      const next = mergeBackup(state, pendingDriveBackup);
+      if (document.querySelector('#drive-restore-settings')?.checked)
+        next.settings = { ...pendingDriveBackup.settings };
+      await persist(next);
+      pendingDriveBackup = null;
+      closeModal(); render();
+      toast('دُمجت نسخة Google Drive مع هذا الجهاز.');
+    } else if (a === 'drive-disconnect') {
+      if (driveBusy) return;
+      drive.disconnect();
+      driveFiles = []; driveNextPage = ''; pendingDriveBackup = null;
+      driveMessage = 'انتهت جلسة الربط على هذه الصفحة. ملفات Google Drive محفوظة.';
+      refreshDrivePanel();
     } else if (a === 'restore') document.querySelector('#restore-file').click();
     else if (a === 'confirm-restore') {
       const next = mergeBackup(state, pendingBackup);

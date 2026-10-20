@@ -39,6 +39,8 @@ app = app.replace('نسخة تجريبية ${VERSION}', 'نسخة الكمبيو
 const modules = [];
 for (const name of [
   'domain.js',
+  'drive-config.js',
+  'drive-storage.js',
   'storage.js',
   'task-cards.js',
   'listening-recordings.js',
@@ -86,3 +88,4 @@ for (const name of ['xlsx', 'fflate']) {
 }
 await writeFile(resolve(out, 'Al-Musaed-Desktop.html'), html);
 console.log('Portable desktop HTML built; all assets and curriculum embedded.');
+

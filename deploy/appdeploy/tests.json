@@ -18,7 +18,8 @@
       "end of roster stop",
       "failed item details and notes",
       "matched-material progress comparison",
-      "student-only view"
+      "student-only view",
+      "printable training plan grouped by observed skill difficulties"
     ],
     "description": "Complete a six-card first-grade fatha test, change a judgement and verify the saved report after reload.",
     "steps": [
@@ -31,7 +32,7 @@
       "The report shows ٦٧٪ and متوسط. Export its CSV and verify the print/PDF action remains available.",
       "Click الطالب التالي: طالب تالٍ. Its name and same first letter appear with no old judgements. Grade all six cards متقن and save; its report shows ١٠٠٪ and آخر طالب في هذا الكشف.",
       "Reload and reopen تجربة التشخيص from النتائج. Its saved report still shows ٦٧٪ with the note, independent of the next student's result.",
-      "In the saved report verify بنود تحتاج تدريبًا includes the incorrect and assisted letter cards. Repeat the exact same six-card test for the first student with all correct answers. Its report shows comparison to the earlier 67% result; changing a sample must instead remove the matched comparison."
+      "In the saved report verify بنود تحتاج تدريبًا includes the incorrect and assisted letter cards. Locate خطة تدريب مقترحة in that report and verify it groups those actual difficulties by skill, includes an activity and recheck, and appears in the printable report without including mastered cards. Repeat the exact same six-card test for the first student with all correct answers. Its report shows comparison to the earlier 67% result; changing a sample must instead remove the matched comparison."
     ],
     "expected": "One durable result shows ٦٧٪ and متوسط, previous judgement was replaced, the report and CSV are available and the saved draft is gone."
   },
@@ -53,7 +54,9 @@
       "teacher and principal footer exclusion",
       "full roster review before confirmation",
       "name and guardian correction",
-      "excluding reviewed rows"
+      "excluding reviewed rows",
+      "all selected Word tables and Excel worksheets",
+      "side-by-side name columns without truncated review"
     ],
     "description": "Manage a small roster on mobile and verify validation, duplicate prevention and recoverable archiving.",
     "steps": [
@@ -63,6 +66,8 @@
       "Import the same workbook again and verify no duplicate names are added. With a real DOCX containing a table of one distinct student and guardian, review the names, approve with اعتماد الكشف and confirm the student's name and guardian are shown.",
       "Open النسخ واللصق بدلًا من الملف and paste one new student; review the pasted names and approve to section ب. Verify paste remains usable independently of file import.",
       "Edit the pasted student's name, archive them, open الطلاب المؤرشفون and restore them. Reload and search for the updated name.",
+      "Using a synthetic DOCX with two tables and 25 distinct students total, select it and verify both suitable tables are selected. Review all 25 names, approve and reload; all 25 remain. Reimport does not duplicate them.",
+      "Using a synthetic XLSX with two worksheets containing 13 and 12 distinct students, explicitly select both worksheets, review all 25, approve and reload. Using a separate synthetic XLS with adjacent repeated name/guardian column groups, verify names from both groups are included, not only the first group.",
       "Try selecting a text-only file renamed broken.xlsx; a readable invalid-file error appears and no names are imported. An empty manual student name cannot be saved."
     ],
     "expected": "Real Excel and Word files import correct names and guardians with no duplicates; paste, editing and archive recovery still work, malformed files and blank names create no records."
@@ -75,12 +80,15 @@
       "backup restore and merge",
       "duplicate merge prevention",
       "draft retention",
-      "local-only records"
+      "local-only records",
+      "configured Google Drive opt-in entry point",
+      "no Google upload or restore before account connection"
     ],
     "description": "Export a real backup from a saved draft and merge it twice without duplicating records.",
     "steps": [
       "Add a first-grade student named نسخة احتياطية in section ج. Start a unit 1 test of only the fatha skill, grade one card and save for later.",
-      "Open الإعدادات and export a backup using تصدير نسخة; retain the downloaded JSON file.",
+      "Open الإعدادات. The Google Drive panel offers تجهيز تسجيل دخول Google, explains manual backup/restore and local storage, and shows no save/restore controls or connected session before authorization. Do not sign into a real Google account or upload test data; real-account consent and Drive round trips are owner acceptance checks, not this unattended QA test.",
+      "Export a backup using تصدير نسخة; retain the downloaded JSON file.",
       "Restore that downloaded file through the restore file input and confirm دمج النسخة. Restore and merge the same file again.",
       "Return home and verify exactly one student and one resumable assessment, then reload and resume the draft."
     ],
@@ -108,7 +116,9 @@
       "bundled offline listening narration",
       "listening question privacy",
       "shared passage edit invalidates old audio and judgements",
-      "complete playback count"
+      "complete playback count",
+      "uninterrupted playback across student view and question navigation",
+      "nonblocking listening-before-grading advisory"
     ],
     "description": "Exercise second-semester assessments and teacher-controlled sample editing on mobile.",
     "steps": [
@@ -120,8 +130,8 @@
       "Choose الفهم والاستماع in grade 2 setup, review the samples and edit the first listening teacher text and its expected answer together. Start and open خيارات التقييم والملاحظات then دليل المعلم والإجابة المتوقعة. The edited text is visible to the teacher; عرض الطالب hides it. Editing the active card offers the teacher text field and saving clears an earlier judgement.",
       "For the solar/lunar skill verify ten classification cards, five lunar then five solar. Grade the five lunar correct and three solar incorrect, save and check the report shows lunar 100%, solar 40%, with the three failed words listed. The task asks classification alone.",
       "For grade 2, semester 1, unit 3, clear selection and choose يقرأ ويكتب التنوين alone. Its ten cards contain five read-only cards and five write-only cards. Mark reading cards correct and writing cards incorrect; عرض الطالب must never show the dictated word. Save and verify independent reading 100% and dictation 0%, with five failed writing cards and their criteria.",
-      "Save any active assessment for later. Start a new grade 2 test in semester 1 unit 2. Clear selection and choose only فهم نص مسموع. Start and verify three oral-question cards for مساعدة الجار, with a working audio player and no missing-recording warning. Play the complete recording and verify the completed-listening count becomes one.",
-      "Use عرض الطالب. The passage, question text and answers must be absent; only the listening instruction appears. Return to the teacher. Grade a question, then edit the shared teacher passage through the teacher guide. Verify the old audio is removed, all three question judgements are cleared, and the missing-recording notice appears. Save for later and reload; the edited passage remains."
+      "Save any active assessment for later. Start a new grade 2 test in semester 1 unit 2. Clear selection and choose only فهم نص مسموع. Start and verify three oral-question cards for مساعدة الجار, with a working audio player and no missing-recording warning. With zero complete listens an advisory appears without disabling manual grading. Start playback, enter عرض الطالب and return while audio continues without reset. Navigate to the next listening question while playing the same passage and verify playback continues; wait for completion and verify the completed-listening count becomes one.",
+      "Use عرض الطالب. The audio controls and listening instruction remain available, but passage, question text and answers must be absent. Return to the teacher. Grade a question, then edit the shared teacher passage through the teacher guide. Verify the old audio is removed, all three question judgements are cleared, and the missing-recording notice appears. Save for later and reload; the edited passage remains."
     ],
     "expected": "Both second-semester routes run on mobile; edited cards show the teacher text, active-card editing clears its judgement, and both drafts persist. For first-semester unit 2, bundled listening audio plays, completed listening is counted, the student sees no questions or answers, and editing the shared passage invalidates its old audio and judgements."
   },
@@ -159,3 +169,4 @@
     "expected": "Settings persist, invalid thresholds are rejected, the report labels untested students correctly, CSV exports and the cached app opens offline with the saved student."
   }
 ]
+
