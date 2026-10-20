@@ -1,5 +1,11 @@
 # AppDeploy deployment checklist
 
+## Existing app update 0.6.0 (20 October 2026)
+
+Implementation: retain app-0gwwi6 and its URL; publish complete Word/Excel roster imports, uninterrupted listening, skill-based training plans, and owner-configured opt-in Google Drive backup/restore. No backend or platform SDK is added. Existing IndexedDB schema and student records are retained. Do not republish source-controlled binaries that are unchanged.
+
+Preflight: inspect current ready snapshot 1792114028784 and its JSON tests; reconcile all five QA workflows with changed imports, listening, training-plan and Drive entry/authorization boundary. Run 41 unit tests and local browser checks including mock Drive round trips. Format the staging sources, compare each text file with the existing snapshot and send only changed/new files. Validate tests/manifest JSON, build Vite output and verify the configured public client ID without secrets or student data. Screenshots provided by the owner confirm Drive API enabled, owner in test users, and the matching AppDeploy origin on the dedicated web client. Do not claim real OAuth/Drive acceptance based on mock tests. Keep polling deployment through final QA; real account approval requires the owner.
+
 Implementation:
 - New independent frontend-only html-static app; no backend, no SDK, no cloud student records.
 - Generate a Vite staging copy from the existing app; preserve all grades, assessment, roster, reports, settings, backup and PWA workflows.
@@ -34,3 +40,4 @@ Result: all preflight items passed. Local Vite browser workflow passed including
 ## Astra review update 0.3.0
 Implementation: retain app-0gwwi6 and its local data schema; single-task compound cards; balanced solar/lunar subskills; editable listening/dictation criteria; student-only view; full roster confirmation; result search/date/semester/section filters; homogeneous class scope with item counts and dates; matched progress and detailed failed items; ready presets and backup reminder.
 Preflight: 24 unit tests pass; full desktop/mobile flow, original snapshot restore, Vite production review flow including compound cards/dates/CSV, portable build and offline all pass. Five reconciled QA workflows, exactly one sanity; no real student data or secrets. Send changed source files plus task-cards.js only; retain current dependencies and existing assets; parse manifest/test JSON and check the current published version before upload. Poll QA until terminal and inspect errors.
+

@@ -2,15 +2,20 @@
   "platform": "AppDeploy",
   "app_id": "app-0gwwi6",
   "url": "https://app-0gwwi6.v2.appdeploy.ai/",
-  "snapshot_version": "1791972911212",
-  "published_on": "2026-10-14",
+  "snapshot_version": "1792469358609",
+  "published_on": "2026-10-20",
   "status": "ready",
-  "student_storage": "local IndexedDB only; empty initial roster",
+  "student_storage": "local IndexedDB with optional explicit Google Drive appDataFolder backup/restore; empty initial roster",
   "checks": {
     "local_vite_e2e": "passed",
     "platform_runtime_qa": "no frontend, network or backend errors reported",
-    "roster_import_and_batch_e2e": "passed for XLSX/XLS/DOCX, automatic scoring and section-order next student"
+    "roster_import_and_batch_e2e": "passed for 25 complete XLSX/XLS/DOCX names, reload and duplicate prevention",
+    "unit_tests": "41 passed",
+    "drive_mock_e2e": "passed; no real OAuth/Drive approval or upload tested",
+    "live_browser_check": "ERR_EMPTY_RESPONSE from local test browser; not a successful live check",
+    "validation_warning": "custom manifest layout/base could not be established by conservative platform check; local production offline reload passed"
   },
-  "scope": "independent new trial app; no previous apps modified",
-  "app_version": "0.2.0"
+  "scope": "update existing app-0gwwi6; retain URL, prior local data and unchanged assets",
+  "app_version": "0.6.0"
 }
+
