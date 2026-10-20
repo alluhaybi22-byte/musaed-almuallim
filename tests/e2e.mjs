@@ -141,42 +141,23 @@ try {
   for (let i = 2; i < 6; i++) {
     await click("متمكن");
   }
-  await page.getByRole("heading", { name: "مراجعة الاختبار" }).waitFor();
-  await page.locator("#final-note").fill("تحتاج الفتحة إلى تدريب إضافي.");
-  await click("حفظ نتيجة الاختبار");
-  await page.getByRole("dialog").waitFor();
-  assert.ok((await page.locator("#report").innerText()).includes("٦٧٪"));
-  assert.ok((await page.locator("#report").innerText()).includes("متوسط"));
-  await screenshot("student-report");
-  await page.pdf({
-    path: "test-results/student-report.pdf",
-    format: "A4",
-    printBackground: true,
-  });
-  await click("الطالب التالي: طالب باء");
-  assert.equal(
-    await page.locator(".assessment-head h1").textContent(),
-    "طالب باء",
-  );
-  assert.ok((await page.locator(".stimulus").textContent()).includes("م"));
-  assert.equal(
-    await page.locator('.score-btn[aria-pressed="true"]').count(),
-    0,
-  );
-  for (let i = 0; i < 6; i++) await click("متمكن");
-  await click("حفظ نتيجة الاختبار");
-  await page.getByRole("dialog").waitFor();
-  assert.ok((await page.locator("#report").innerText()).includes("١٠٠٪"));
-  await click("الطالب التالي: طالب وورد");
-  assert.equal(
-    await page.locator(".assessment-head h1").textContent(),
-    "طالب وورد",
-  );
-  for (let i = 0; i < 6; i++) await click("متمكن");
-  await click("حفظ نتيجة الاختبار");
-  await page.getByText("آخر طالب في هذا الكشف", { exact: true }).waitFor();
-  assert.equal(await page.locator('[data-action="next-student"]').count(), 0);
-  await click("إغلاق");
+  await page.locator('.assessment-head h1').filter({hasText:'طالب باء'}).waitFor();
+  assert.equal(await page.locator('#report').count(),0);
+  assert.equal(await page.locator('.score-btn[aria-pressed="true"]').count(),0);
+  for(let i=0;i<6;i++) await click('متمكن');
+  await page.locator('.assessment-head h1').filter({hasText:'طالب وورد'}).waitFor();
+  assert.equal(await page.locator('#report').count(),0);
+  for(let i=0;i<6;i++) await click('متمكن');
+  await page.locator('#student-list').waitFor();
+  assert.equal(await page.locator('#report').count(),0);
+  await page.locator('.nav [data-route="results"]').click();
+  await page.locator('.result-row').filter({hasText:'طالب ألف'}).locator('[data-action="student-report"]').click();
+  await page.locator('#report').waitFor();
+  assert.ok((await page.locator('#report').innerText()).includes('٦٧٪'));
+  assert.ok((await page.locator('#report').innerText()).includes('متوسط'));
+  await screenshot('student-report');
+  await page.pdf({path:'test-results/student-report.pdf',format:'A4',printBackground:true});
+  await click('إغلاق');
   await page.locator('.nav [data-route="settings"]').click();
   const download = page.waitForEvent("download");
   await click("تصدير نسخة");

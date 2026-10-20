@@ -1,6 +1,6 @@
 {
   "name": "musaed-almuallim",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "description": "المساعد للاختبارات التشخيصية في لغتي للصفوف الأولية",
@@ -17,7 +17,8 @@
     "test:listening": "node tests/listening-e2e.mjs",
     "test:reading": "node tests/reading-lessons-e2e.mjs",
     "test:single": "node tests/reading-single-e2e.mjs",
-    "test:controls": "node tests/assessment-controls-e2e.mjs"
+    "test:controls": "node tests/assessment-controls-e2e.mjs",
+    "test:auto": "node tests/automatic-next-e2e.mjs"
   },
   "engines": {
     "node": ">=22"
@@ -26,4 +27,3 @@
     "@playwright/test": "1.56.1"
   }
 }
-

@@ -23,6 +23,7 @@ jobs:
       - run: npm run test:reading
       - run: npm run test:single
       - run: npm run test:controls
+      - run: npm run test:auto
       - run: npm run test:portable
       - run: npm run build
 
