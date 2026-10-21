@@ -1,3 +1,4 @@
+import { action as uiAction, prepareAction } from './ui.mjs';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -32,8 +33,9 @@ try {
   const context=await browser.newContext({viewport:{width:390,height:844}});
   const page=await context.newPage(); page.setDefaultTimeout(10000); const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://localhost:4192');
-  const click=a=>page.locator(`[data-action="${a}"]`).first().click();
-  await page.locator('[data-action="open-grade"][data-grade="2"]').click();
+  const click=a=>uiAction(page,a);
+  await page.locator('[data-action="grade"][data-grade="2"]').click();
+  await page.locator('.nav [data-route="students"]').click();
   const open=async()=>{
    await click('roster');
    await page.locator('#roster-file').setInputFiles('test-results/complete.'+ext);
@@ -47,7 +49,8 @@ try {
    await page.getByRole('button',{name:'اعتماد الكشف',exact:true}).click();
    await page.locator('#roster-confirm-form').waitFor({state:'detached'});
   };
-  await open(); await page.reload(); await page.locator('[data-action="open-grade"][data-grade="2"]').click(); await page.locator('.student-row').first().waitFor();
+  await open(); await page.reload(); await page.locator('[data-action="grade"][data-grade="2"]').click();
+  await page.locator('.nav [data-route="students"]').click(); await page.locator('.student-row').first().waitFor();
   assert.equal(await page.locator('.student-row').count(),25,ext+' persisted roster');
   await open(); assert.equal(await page.locator('.student-row').count(),25,ext+' duplicate prevention');
   assert.deepEqual(errors,[]); console.log('PASS',ext,'25 full names reviewed, saved, reloaded, reimported without duplicates');

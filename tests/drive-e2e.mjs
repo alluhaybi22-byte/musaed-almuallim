@@ -1,3 +1,4 @@
+import { action as uiAction, prepareAction } from './ui.mjs';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 let pw;
@@ -45,7 +46,7 @@ async function session(configured = true) {
   debugPage = page;
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('http://localhost:4193');
-  await page.getByRole('heading', { name: 'مساحة معلمك', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'صفي', exact: true }).waitFor();
   return { context, page };
 }
 const settings = page => page.locator('[data-action="nav"][data-route="settings"]').first().click();

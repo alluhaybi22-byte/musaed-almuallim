@@ -1,3 +1,4 @@
+import { action as uiAction, prepareAction } from './ui.mjs';
 import assert from "node:assert/strict";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
@@ -43,6 +44,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.setDefaultTimeout(10000);
 async function click(name) {
+  await prepareAction(page, name);
   if (["بمساعدة", "غير مقيم", "غير مدرس"].includes(name))
     await page
       .locator(".assessment-options")
@@ -52,7 +54,7 @@ async function click(name) {
   )
     ? await page.locator(".assessment-body .row.between small").textContent()
     : null;
-  await page.getByRole("button", { name, exact: true }).first().click();
+  await page.getByRole("button", { name, exact: true }).filter({visible:true}).first().click();
   if (before)
     await page.waitForFunction(
       (old) =>
@@ -66,14 +68,15 @@ async function screenshot(name) {
 }
 try {
   await page.goto("http://localhost:4173");
-  await page.getByRole("heading", { name: "مساحة معلمك" }).waitFor();
+  await page.getByRole("heading", { name: "صفي" }).waitFor();
   await screenshot("home-desktop");
   await page.setViewportSize({ width: 390, height: 844 });
   await screenshot("home-mobile-empty");
   await page.setViewportSize({ width: 1440, height: 1024 });
-  assert.equal(await page.locator(".grade-card").count(), 3);
+  assert.equal(await page.locator(".tabs button").count(), 3);
   assert.equal(await page.locator(".metric strong").first().textContent(), "٠");
-  await page.locator('[data-action="open-grade"][data-grade="1"]').click();
+  await page.locator('[data-action="grade"][data-grade="1"]').click();
+  await page.locator('.nav [data-route="students"]').click();
   const importButton = "استيراد Excel أو Word / لصق كشف";
   await click(importButton);
   await page.locator("#roster-file").setInputFiles("test-results/broken.xlsx");
@@ -132,7 +135,7 @@ try {
   await click("بمساعدة");
   await click("حفظ واستكمال لاحقًا");
   await page.reload();
-  await page.getByRole("heading", { name: "مساحة معلمك" }).waitFor();
+  await page.getByRole("heading", { name: "صفي" }).waitFor();
   await click("استكمال");
   await click("السابقة");
   await click("السابقة");
@@ -148,7 +151,7 @@ try {
   await page.locator('.assessment-head h1').filter({hasText:'طالب وورد'}).waitFor();
   assert.equal(await page.locator('#report').count(),0);
   for(let i=0;i<6;i++) await click('متمكن');
-  await page.locator('#student-list').waitFor();
+  await page.locator('#session-sheet').waitFor();
   assert.equal(await page.locator('#report').count(),0);
   await page.locator('.nav [data-route="results"]').click();
   await page.locator('.result-row').filter({hasText:'طالب ألف'}).locator('[data-action="student-report"]').click();
@@ -171,10 +174,10 @@ try {
   await page.locator('.nav [data-route="home"]').click();
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload();
-  await page.getByRole("heading", { name: "مساحة معلمك" }).waitFor();
+  await page.getByRole("heading", { name: "صفي" }).waitFor();
   await context.setOffline(true);
   await page.reload();
-  await page.getByRole("heading", { name: "مساحة معلمك" }).waitFor();
+  await page.getByRole("heading", { name: "صفي" }).waitFor();
   await context.setOffline(false);
   await page.setViewportSize({ width: 390, height: 844 });
   await screenshot("home-mobile");
@@ -190,7 +193,7 @@ try {
     }),
     p = await fresh.newPage();
   await p.goto("http://localhost:4173");
-  await p.getByRole("heading", { name: "مساحة معلمك" }).waitFor();
+  await p.getByRole("heading", { name: "صفي" }).waitFor();
   await p.locator('.nav [data-route="settings"]').click();
   await p.locator("#restore-file").setInputFiles("test-results/backup.json");
   await p.getByRole("button", { name: "دمج النسخة", exact: true }).click();
@@ -202,7 +205,8 @@ try {
   assert.equal(await p.locator(".metric strong").nth(0).textContent(), "٤");
   assert.equal(await p.locator(".metric strong").nth(1).textContent(), "٣");
   for (const g of [2, 3]) {
-    await p.locator(`[data-action="open-grade"][data-grade="${g}"]`).click();
+    await p.locator(`[data-action="grade"][data-grade="${g}"]`).click();
+    await p.locator('.nav [data-route="students"]').click();
     await p
       .getByRole("button", { name: "إضافة طالب", exact: true })
       .first()
@@ -213,6 +217,7 @@ try {
     await p.getByRole("button", { name: "بدء اختبار", exact: true }).click();
     await p.locator("#setup-semester").selectOption("2");
     if (g === 3) await p.locator("#setup-unit").selectOption("8");
+    await p.locator('.setup-custom').evaluate(el=>el.open=true);
     await p
       .locator(`[data-skill="common-g${g}-s2-u${g === 3 ? 8 : 5}-reading"]`)
       .check();
@@ -224,7 +229,7 @@ try {
     await p
       .getByRole("button", { name: "حفظ واستكمال لاحقًا", exact: true })
       .click();
-    await p.getByRole("heading", { name: "مساحة معلمك" }).waitFor();
+    await p.getByRole("heading", { name: "صفي" }).waitFor();
   }
   await fresh.close();
   assert.deepEqual(errors, []);

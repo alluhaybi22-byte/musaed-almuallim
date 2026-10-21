@@ -1,9 +1,16 @@
 {
   "name": "musaed-almuallim",
-  "main": "dist/private-worker.mjs",
+  "main": "worker.js",
   "compatibility_date": "2026-10-14",
   "workers_dev": true,
   "preview_urls": false,
-  "build": { "command": "node scripts/build.mjs && node scripts/pack-worker.mjs" },
+  "build": { "command": "node scripts/build.mjs" },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
   "observability": { "enabled": false }
 }
