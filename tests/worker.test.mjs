@@ -37,7 +37,7 @@ const postLogin=(password,extra={})=>new Request('https://app/login',{method:'PO
 test('Arabic login form works without a browser authentication popup and keeps assets private',async()=>{
  const env={PREVIEW_PASSWORD:'correct',ASSETS:{fetch:async()=>new Response('private-app')}};
  const page=await worker.fetch(new Request('https://app/'),env);
- assert.equal(page.status,200);assert.equal(page.headers.get('Cache-Control'),'no-store');assert(!page.headers.has('WWW-Authenticate'));
+ assert.equal(page.status,200);assert.equal(page.headers.get('Cache-Control'),'no-store');assert.equal(page.headers.get('Referrer-Policy'),'same-origin');assert(!page.headers.has('WWW-Authenticate'));
  const html=await page.text();assert(html.includes('lang="ar"'));assert(html.includes('type="password"'));assert(!html.includes('correct'));
  const wrong=await worker.fetch(postLogin('wrong'),env);assert.equal(wrong.status,401);assert(!wrong.headers.has('WWW-Authenticate'));assert(!wrong.headers.has('Set-Cookie'));assert((await wrong.text()).includes('كلمة المرور غير صحيحة'));
  const signedIn=await worker.fetch(postLogin('correct'),env);assert.equal(signedIn.status,303);assert.equal(signedIn.headers.get('Location'),'/');
