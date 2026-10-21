@@ -20,10 +20,21 @@ export function assetResponse(request,assets){
  const asset=assets[path];if(!asset)return new Response('Not found',{status:404,headers:securityHeaders});
  const bytes=Uint8Array.from(atob(asset.body),c=>c.charCodeAt(0));return new Response(request.method==='HEAD'?null:bytes,{headers:{...securityHeaders,'Content-Type':asset.type,...(asset.encoding?{'Content-Encoding':asset.encoding}:{}),'Cache-Control':path==='/sw.js'?'no-cache':'private, max-age=0, must-revalidate','Service-Worker-Allowed':'/'}});
 }
+export async function boundAssetResponse(request,assets){
+ const url=new URL(request.url);let path;try{path=decodeURIComponent(url.pathname);}catch{return new Response('Bad path',{status:400,headers:securityHeaders});}
+ if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed',{status:405,headers:{...securityHeaders,Allow:'GET, HEAD'}});
+ if(path==='/')url.pathname='/index.html';
+ const response=await assets.fetch(new Request(url,request));
+ const headers=new Headers(response.headers);
+ for(const [name,value] of Object.entries(securityHeaders))headers.set(name,value);
+ headers.set('Cache-Control',path==='/sw.js'?'no-cache':'private, max-age=0, must-revalidate');
+ headers.set('Service-Worker-Allowed','/');
+ return new Response(request.method==='HEAD'?null:response.body,{status:response.status,statusText:response.statusText,headers});
+}
 export default {
  async fetch(request,env){
   if(!await authorized(request,env.PREVIEW_PASSWORD))return new Response('Private preview',{status:401,headers:{...securityHeaders,'WWW-Authenticate':'Basic realm="Al Musaed private preview", charset="UTF-8"','Cache-Control':'no-store'}});
-  return assetResponse(request,globalThis.__MUSAED_ASSETS__||{});
+  return env.ASSETS ? boundAssetResponse(request,env.ASSETS) : assetResponse(request,globalThis.__MUSAED_ASSETS__||{});
  }
 };
 
